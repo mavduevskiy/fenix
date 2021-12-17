@@ -95,7 +95,7 @@ class DefaultNavigationInteractor(
     private val navController: NavController,
     private val metrics: MetricController,
     private val dismissTabTray: () -> Unit,
-    private val dismissTabTrayAndNavigateHome: (String) -> Unit,
+    private val dismissTabTrayAndNavigateHome: (sessionId: String) -> Unit,
     private val bookmarksUseCase: BookmarksUseCase,
     private val tabsTrayStore: TabsTrayStore,
     private val collectionStorage: TabCollectionStorage,
@@ -105,6 +105,7 @@ class DefaultNavigationInteractor(
         collectionToSelect: Long?
     ) -> Unit,
     private val showBookmarkSnackbar: (tabSize: Int) -> Unit,
+    private val showCancelledDownloadWarning: (downloadCount: Int, onAccept: () -> Unit) -> Unit,
     private val accountManager: FxaAccountManager,
     private val ioDispatcher: CoroutineContext
 ) : NavigationInteractor {
@@ -167,6 +168,15 @@ class DefaultNavigationInteractor(
             HomeFragment.ALL_NORMAL_TABS
         }
 
+        if (private) {
+            val privateDownloads = browserStore.state.downloads.filter { it.value.private }
+            if (privateDownloads.isNotEmpty()) {
+                showCancelledDownloadWarning(privateDownloads.size) {
+                    dismissTabTrayAndNavigateHome(sessionsToClose)
+                }
+                return
+            }
+        }
         dismissTabTrayAndNavigateHome(sessionsToClose)
     }
 
