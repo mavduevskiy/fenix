@@ -56,6 +56,15 @@ interface TabsTrayController {
     fun handleTabDeletion(tabId: String, source: String? = null)
 
     /**
+     * Deletes the [TabSessionState] with the specified [tabId]
+     * Tracks [Event.ClosedExistingTab] in case of deletion.
+     *
+     * @param tabId The id of the [TabSessionState] to be removed from TabsTray.
+     * @param source app feature from which the tab with [tabId] was closed.
+     */
+    fun handleDeleteTabWarningAccepted(tabId: String, source: String? = null)
+
+    /**
      * Deletes a list of [tabs].
      *
      * @param tabs List of [TabSessionState]s (sessions) to be removed.
@@ -108,7 +117,7 @@ class DefaultTabsTrayController(
     private val selectTabPosition: (Int, Boolean) -> Unit,
     private val dismissTray: () -> Unit,
     private val showUndoSnackbarForTab: (Boolean) -> Unit,
-    private val showCancelledDownloadWarning: (downloadCount: Int, onAccept: () -> Unit) -> Unit,
+    private val showCancelledDownloadWarning: (downloadCount: Int, tabId: String?, source: String?) -> Unit,
 
 ) : TabsTrayController {
 
@@ -152,6 +161,14 @@ class DefaultTabsTrayController(
      * This method has no effect if the tab does not exist.
      */
     override fun handleTabDeletion(tabId: String, source: String?) {
+        deleteTab(tabId, source, isConfirmed = false)
+    }
+
+    override fun handleDeleteTabWarningAccepted(tabId: String, source: String?) {
+        deleteTab(tabId, source, isConfirmed = true)
+    }
+
+    private fun deleteTab(tabId: String, source: String?, isConfirmed: Boolean) {
         val tab = browserStore.state.findTab(tabId)
 
         tab?.let {
@@ -161,10 +178,8 @@ class DefaultTabsTrayController(
                 showUndoSnackbarForTab(it.content.private)
             } else {
                 val privateDownloads = browserStore.state.downloads.filter { it.value.private }
-                if (privateDownloads.isNotEmpty()) {
-                    showCancelledDownloadWarning(privateDownloads.size) {
-                        dismissTabsTrayAndNavigateHome(tabId)
-                    }
+                if (!isConfirmed && privateDownloads.isNotEmpty()) {
+                    showCancelledDownloadWarning(privateDownloads.size, tabId, source)
                     return
                 } else {
                     dismissTabsTrayAndNavigateHome(tabId)

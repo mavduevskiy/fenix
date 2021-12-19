@@ -91,7 +91,6 @@ class TabsTrayFragment : AppCompatDialogFragment() {
     @VisibleForTesting @Suppress("VariableNaming")
     internal var _fabButtonBinding: ComponentTabstrayFabBinding? = null
     private val fabButtonBinding get() = _fabButtonBinding!!
-    private lateinit var previousDialogFragmentCallback : () -> Unit
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,9 +143,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
     override fun onStart() {
         super.onStart()
         findPreviousDialogFragment()?.let { dialog ->
-            if (this::previousDialogFragmentCallback.isInitialized) {
-                dialog.onAcceptClicked = previousDialogFragmentCallback
-            }
+            dialog.onAcceptClicked = ::onCancelDownloadWarningAccepted
         }
     }
 
@@ -382,10 +379,20 @@ class TabsTrayFragment : AppCompatDialogFragment() {
     }
 
     @VisibleForTesting
-    internal fun showCancelledDownloadWarning(downloadCount: Int, onAccept: () -> Unit) {
-        previousDialogFragmentCallback = onAccept
+    internal fun onCancelDownloadWarningAccepted(tabId: String?, source: String?) {
+        if (tabId != null) {
+            tabsTrayInteractor.onDeletePrivateTabWarningAccepted(tabId, source)
+        } else {
+            navigationInteractor.onCloseAllPrivateTabsWarningConfirmed(private = true)
+        }
+    }
+
+    @VisibleForTesting
+    internal fun showCancelledDownloadWarning(downloadCount: Int, tabId: String?, source: String?) {
         val dialog = DownloadCancelDialogFragment.newInstance(
             downloadCount = downloadCount,
+            tabId = tabId,
+            source = source,
             promptStyling = DownloadCancelDialogFragment.PromptStyling(
                 gravity = Gravity.BOTTOM,
                 shouldWidthMatchParent = true,
@@ -400,7 +407,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                 positiveButtonRadius = (resources.getDimensionPixelSize(R.dimen.tab_corner_radius)).toFloat()
             ),
 
-            onPositiveButtonClicked = { onAccept.invoke() }
+            onPositiveButtonClicked = ::onCancelDownloadWarningAccepted
         )
         dialog.show(parentFragmentManager, DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG)
     }
@@ -552,6 +559,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             .show()
     }
 
+    @Suppress("MaxLineLength")
     private fun findPreviousDialogFragment(): DownloadCancelDialogFragment? {
         return parentFragmentManager.findFragmentByTag(DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG) as? DownloadCancelDialogFragment
     }

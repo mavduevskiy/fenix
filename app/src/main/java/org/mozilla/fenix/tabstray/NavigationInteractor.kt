@@ -7,7 +7,6 @@ package org.mozilla.fenix.tabstray
 import android.content.Context
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.normalTabs
@@ -31,6 +30,7 @@ import kotlin.coroutines.CoroutineContext
 /**
  * An interactor that helps with navigating to different parts of the app from the tabs tray.
  */
+@Suppress("TooManyFunctions")
 interface NavigationInteractor {
 
     /**
@@ -64,6 +64,11 @@ interface NavigationInteractor {
     fun onCloseAllTabsClicked(private: Boolean)
 
     /**
+     * Called when cancelling private downloads confirmed.
+     */
+    fun onCloseAllPrivateTabsWarningConfirmed(private: Boolean)
+
+    /**
      * Called when opening the recently closed tabs menu button.
      */
     fun onOpenRecentlyClosedClicked()
@@ -87,7 +92,7 @@ interface NavigationInteractor {
 /**
  * A default implementation of [NavigationInteractor].
  */
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "TooManyFunctions")
 class DefaultNavigationInteractor(
     private val context: Context,
     private val activity: HomeActivity,
@@ -105,7 +110,7 @@ class DefaultNavigationInteractor(
         collectionToSelect: Long?
     ) -> Unit,
     private val showBookmarkSnackbar: (tabSize: Int) -> Unit,
-    private val showCancelledDownloadWarning: (downloadCount: Int, onAccept: () -> Unit) -> Unit,
+    private val showCancelledDownloadWarning: (downloadCount: Int, tabId: String?, source: String?) -> Unit,
     private val accountManager: FxaAccountManager,
     private val ioDispatcher: CoroutineContext
 ) : NavigationInteractor {
@@ -160,20 +165,25 @@ class DefaultNavigationInteractor(
         navController.navigate(directions)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onCloseAllTabsClicked(private: Boolean) {
+        closeAllTabs(private, isConfirmed = false)
+    }
+
+    override fun onCloseAllPrivateTabsWarningConfirmed(private: Boolean) {
+        closeAllTabs(private, isConfirmed = true)
+    }
+
+    private fun closeAllTabs(private: Boolean, isConfirmed: Boolean) {
         val sessionsToClose = if (private) {
             HomeFragment.ALL_PRIVATE_TABS
         } else {
             HomeFragment.ALL_NORMAL_TABS
         }
 
-        if (private) {
+        if (private && !isConfirmed) {
             val privateDownloads = browserStore.state.downloads.filter { it.value.private }
             if (privateDownloads.isNotEmpty()) {
-                showCancelledDownloadWarning(privateDownloads.size) {
-                    dismissTabTrayAndNavigateHome(sessionsToClose)
-                }
+                showCancelledDownloadWarning(privateDownloads.size, null, null)
                 return
             }
         }
