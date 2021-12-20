@@ -11,6 +11,7 @@ import mozilla.components.browser.state.action.LastAccessAction
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.feature.tabs.TabsUseCases
@@ -117,7 +118,8 @@ class DefaultTabsTrayController(
     private val selectTabPosition: (Int, Boolean) -> Unit,
     private val dismissTray: () -> Unit,
     private val showUndoSnackbarForTab: (Boolean) -> Unit,
-    private val showCancelledDownloadWarning: (downloadCount: Int, tabId: String?, source: String?) -> Unit,
+    @VisibleForTesting
+    internal val showCancelledDownloadWarning: (downloadCount: Int, tabId: String?, source: String?) -> Unit,
 
 ) : TabsTrayController {
 
@@ -177,7 +179,13 @@ class DefaultTabsTrayController(
                 tabsUseCases.removeTab(tabId)
                 showUndoSnackbarForTab(it.content.private)
             } else {
-                val privateDownloads = browserStore.state.downloads.filter { it.value.private }
+                val privateDownloads = browserStore.state.downloads.filter { map ->
+                    map.value.private && (
+                        map.value.status == DownloadState.Status.INITIATED ||
+                            map.value.status == DownloadState.Status.DOWNLOADING ||
+                            map.value.status == DownloadState.Status.PAUSED
+                        )
+                }
                 if (!isConfirmed && privateDownloads.isNotEmpty()) {
                     showCancelledDownloadWarning(privateDownloads.size, tabId, source)
                     return

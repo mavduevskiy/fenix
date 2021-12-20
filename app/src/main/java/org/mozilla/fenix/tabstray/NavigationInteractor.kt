@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.Tab as SyncTab
 import mozilla.components.concept.engine.prompt.ShareData
@@ -181,7 +182,13 @@ class DefaultNavigationInteractor(
         }
 
         if (private && !isConfirmed) {
-            val privateDownloads = browserStore.state.downloads.filter { it.value.private }
+            val privateDownloads = browserStore.state.downloads.filter {
+                it.value.private && (
+                    it.value.status == DownloadState.Status.INITIATED ||
+                        it.value.status == DownloadState.Status.DOWNLOADING ||
+                        it.value.status == DownloadState.Status.PAUSED
+                    )
+            }
             if (privateDownloads.isNotEmpty()) {
                 showCancelledDownloadWarning(privateDownloads.size, null, null)
                 return
