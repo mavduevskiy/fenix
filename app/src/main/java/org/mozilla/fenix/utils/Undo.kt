@@ -49,7 +49,7 @@ fun CoroutineScope.allowUndo(
     message: String,
     actionTitle: String,
     onCancel: suspend () -> Unit = {},
-    operation: suspend () -> Unit,
+    operation: suspend (context: Context) -> Unit,
     elevation: Float? = null
 ) {
     // By using an AtomicBoolean, we achieve memory effects of reading and
@@ -82,7 +82,7 @@ fun CoroutineScope.allowUndo(
 
         if (!requestedUndo.get()) {
             snackbar.dismiss()
-            operation.invoke()
+            operation.invoke(parentView.context)
         }
     }
 }

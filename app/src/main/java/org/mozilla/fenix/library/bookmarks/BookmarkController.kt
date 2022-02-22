@@ -62,7 +62,6 @@ class DefaultBookmarkController(
     private val showSnackbar: (String) -> Unit,
     private val deleteBookmarkNodes: (Set<BookmarkNode>, Event) -> Unit,
     private val deleteBookmarkFolder: (Set<BookmarkNode>) -> Unit,
-    private val invokePendingDeletion: () -> Unit,
     private val showTabTray: () -> Unit
 ) : BookmarkController {
 
@@ -86,7 +85,6 @@ class DefaultBookmarkController(
 
     override fun handleBookmarkExpand(folder: BookmarkNode) {
         handleAllBookmarksDeselected()
-        invokePendingDeletion.invoke()
         scope.launch {
             val node = loadBookmarkNode.invoke(folder.guid) ?: return@launch
             sharedViewModel.selectedFolder = node
@@ -152,7 +150,6 @@ class DefaultBookmarkController(
     override fun handleRequestSync() {
         scope.launch {
             store.dispatch(BookmarkFragmentAction.StartSync)
-            invokePendingDeletion()
             activity.components.backgroundServices.accountManager.syncNow(SyncReason.User)
             // The current bookmark node we are viewing may be made invalid after syncing so we
             // check if the current node is valid and if it isn't we find the nearest valid ancestor
@@ -167,7 +164,6 @@ class DefaultBookmarkController(
     }
 
     override fun handleBackPressed() {
-        invokePendingDeletion.invoke()
         scope.launch {
             val parentGuid = store.state.guidBackstack.findLast { guid ->
                 store.state.tree?.guid != guid && activity.bookmarkStorage.getBookmark(guid) != null
@@ -188,7 +184,6 @@ class DefaultBookmarkController(
         mode: BrowsingMode,
         flags: EngineSession.LoadUrlFlags = EngineSession.LoadUrlFlags.none()
     ) {
-        invokePendingDeletion.invoke()
         with(activity) {
             browsingModeManager.mode = mode
             openToBrowserAndLoad(searchTermOrURL, newTab, from, flags = flags)
@@ -199,13 +194,11 @@ class DefaultBookmarkController(
         url: String,
         mode: BrowsingMode
     ) {
-        invokePendingDeletion.invoke()
         activity.browsingModeManager.mode = BrowsingMode.fromBoolean(mode == BrowsingMode.Private)
         tabsUseCases?.addTab?.invoke(url, private = (mode == BrowsingMode.Private))
     }
 
     private fun navigateToGivenDirection(directions: NavDirections) {
-        invokePendingDeletion.invoke()
         navController.nav(R.id.bookmarkFragment, directions)
     }
 }
