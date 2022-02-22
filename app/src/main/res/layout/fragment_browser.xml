@@ -60,6 +60,13 @@
                 android:elevation="24dp"
                 android:visibility="gone" />
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/browser_toolbar_height"
+                android:id="@+id/anchorView"
+                android:layout_gravity="bottom"
+                android:clickable="false" />
+
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
         <mozilla.components.feature.prompts.creditcard.CreditCardSelectBar

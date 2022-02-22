@@ -24,11 +24,12 @@ import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.MainScope
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.storage.BookmarkNode
@@ -41,6 +42,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.metrics.Event
+import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentBookmarkBinding
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.components
@@ -49,6 +51,8 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
 import org.mozilla.fenix.ext.toShortUrl
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.utils.allowUndo
 
@@ -72,13 +76,22 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
 
     private var _binding: FragmentBookmarkBinding? = null
     private val binding get() = _binding!!
+    private val snackbarAnchorView: View?
+        get() = when (requireContext().settings().toolbarPosition) {
+            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
+            ToolbarPosition.TOP -> null
+        }
 
     private val metrics
         get() = context?.components?.analytics?.metrics
 
     override val selectedItems get() = bookmarkStore.state.mode.selectedItems
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentBookmarkBinding.inflate(inflater, container, false)
 
         bookmarkStore = StoreProvider.get(this) {
@@ -315,19 +328,20 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
                 val bookmarkNode = selected.first()
                 getString(
                     R.string.bookmark_deletion_snackbar_message,
-                    bookmarkNode.url?.toShortUrl(requireContext().components.publicSuffixList) ?: bookmarkNode.title
+                    bookmarkNode.url?.toShortUrl(requireContext().components.publicSuffixList)
+                        ?: bookmarkNode.title
                 )
             }
             else -> throw IllegalStateException("Illegal event type in onDeleteSome")
         }
 
-        viewLifecycleOwner.lifecycleScope.allowUndo(
-            requireView(), message,
+        MainScope().allowUndo(
+            requireActivity().getRootView()!!,
+            snackbarAnchorView,
+            message,
             getString(R.string.bookmark_undo_deletion),
-            {
-                undoPendingDeletion(selected)
-            },
-            operation = getDeleteOperation(eventType)
+            { undoPendingDeletion(selected) },
+            operation = getDeleteOperation(eventType),
         )
     }
 
@@ -380,7 +394,8 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
                     val snackbarMessage = getRemoveBookmarksSnackBarMessage(selected, containsFolders = true)
                     // Use fragment's lifecycle; the view may be gone by the time dialog is interacted with.
                     lifecycleScope.allowUndo(
-                        requireView(),
+                        requireActivity().getRootView()!!,
+                        snackbarAnchorView,
                         snackbarMessage,
                         getString(R.string.bookmark_undo_deletion),
                         {

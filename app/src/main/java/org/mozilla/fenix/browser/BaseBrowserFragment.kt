@@ -338,14 +338,16 @@ abstract class BaseBrowserFragment :
                     requireContext().getString(R.string.snackbar_tab_closed)
                 }
 
+                // anchorView is null because binding.browserLayout is a CoordinatorLayout
+                // that has a Behaviour to handle Snackbars correctly
                 viewLifecycleOwner.lifecycleScope.allowUndo(
                     binding.browserLayout,
+                    null,
                     snackbarMessage,
                     requireContext().getString(R.string.snackbar_deleted_undo),
                     {
                         requireComponents.useCases.tabsUseCases.undo.invoke()
                     },
-                    paddedForBottomToolbar = true,
                     operation = { }
                 )
             }

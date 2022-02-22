@@ -231,7 +231,7 @@ class BrowserToolbarView(
                 if (settings.isDynamicToolbarEnabled && !isPwaTabOrTwaTab && !settings.shouldUseFixedTopToolbar) {
                     setDynamicToolbarBehavior(MozacToolbarPosition.BOTTOM)
                 } else {
-                    expandToolbarAndMakeItFixed()
+                    expandToolbarAndMakeItFixed(MozacToolbarPosition.BOTTOM)
                 }
             }
             ToolbarPosition.TOP -> {
@@ -239,7 +239,7 @@ class BrowserToolbarView(
                     !settings.isDynamicToolbarEnabled ||
                     shouldDisableScroll
                 ) {
-                    expandToolbarAndMakeItFixed()
+                    expandToolbarAndMakeItFixed(MozacToolbarPosition.TOP)
                 } else {
                     setDynamicToolbarBehavior(MozacToolbarPosition.TOP)
                 }
@@ -248,10 +248,10 @@ class BrowserToolbarView(
     }
 
     @VisibleForTesting
-    internal fun expandToolbarAndMakeItFixed() {
+    internal fun expandToolbarAndMakeItFixed(toolbarPosition: MozacToolbarPosition) {
         expand()
         (view.layoutParams as? CoordinatorLayout.LayoutParams)?.apply {
-            behavior = null
+            behavior = SnackbarBehavior(view.context, null, toolbarPosition)
         }
     }
 

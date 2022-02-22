@@ -44,8 +44,9 @@ import org.mozilla.fenix.databinding.TabstrayMultiselectItemsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.metrics
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.runIfFragmentIsAttached
+import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.tabstray.browser.BrowserTrayInteractor
@@ -92,6 +93,9 @@ class TabsTrayFragment : AppCompatDialogFragment() {
     @VisibleForTesting @Suppress("VariableNaming")
     internal var _fabButtonBinding: ComponentTabstrayFabBinding? = null
     private val fabButtonBinding get() = _fabButtonBinding!!
+
+    private val snackbarAnchorView: View?
+        get() = if (fabButtonBinding.newTabButton.isVisible) fabButtonBinding.newTabButton else null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -428,7 +432,8 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             }
 
         lifecycleScope.allowUndo(
-            requireView(),
+            requireActivity().getRootView()!!,
+            snackbarAnchorView,
             snackbarMessage,
             getString(R.string.snackbar_deleted_undo),
             {
@@ -440,8 +445,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                 }
             },
             operation = { },
-            elevation = ELEVATION,
-            anchorView = if (fabButtonBinding.newTabButton.isVisible) fabButtonBinding.newTabButton else null
+            elevation = ELEVATION
         )
     }
 

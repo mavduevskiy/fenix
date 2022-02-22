@@ -638,13 +638,13 @@ class HomeFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.allowUndo(
             requireView(),
+            snackbarAnchorView,
             snackbarMessage,
             requireContext().getString(R.string.snackbar_deleted_undo),
             {
                 requireComponents.useCases.tabsUseCases.undo.invoke()
             },
-            operation = { },
-            anchorView = snackbarAnchorView
+            operation = { }
         )
     }
 
@@ -661,6 +661,7 @@ class HomeFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.allowUndo(
             requireView(),
+            snackbarAnchorView,
             snackbarMessage,
             requireContext().getString(R.string.snackbar_deleted_undo),
             {
@@ -669,8 +670,7 @@ class HomeFragment : Fragment() {
                     HomeFragmentDirections.actionGlobalBrowser(null)
                 )
             },
-            operation = { },
-            anchorView = snackbarAnchorView
+            operation = { }
         )
     }
 
@@ -795,14 +795,14 @@ class HomeFragment : Fragment() {
 
         lifecycleScope.allowUndo(
             requireView(),
+            snackbarAnchorView,
             snackbarMessage,
             getString(R.string.snackbar_deleted_undo),
             {
                 requireComponents.core.tabCollectionStorage.createCollection(tabCollection)
             },
             operation = { },
-            elevation = TOAST_ELEVATION,
-            anchorView = null
+            elevation = TOAST_ELEVATION
         )
 
         lifecycleScope.launch(IO) {

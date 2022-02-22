@@ -6,13 +6,10 @@ package org.mozilla.fenix.utils
 
 import android.content.Context
 import android.view.View
-import androidx.appcompat.widget.ContentFrameLayout
-import androidx.core.view.updatePadding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.ext.settings
 import java.util.concurrent.atomic.AtomicBoolean
@@ -47,74 +44,45 @@ fun Context.getUndoDelay(): Long {
  */
 @Suppress("LongParameterList")
 fun CoroutineScope.allowUndo(
-    view: View,
+    parentView: View,
+    anchorView: View?,
     message: String,
-    undoActionTitle: String,
+    actionTitle: String,
     onCancel: suspend () -> Unit = {},
     operation: suspend () -> Unit,
-    anchorView: View? = null,
-    elevation: Float? = null,
-    paddedForBottomToolbar: Boolean = false
+    elevation: Float? = null
 ) {
     // By using an AtomicBoolean, we achieve memory effects of reading and
     // writing a volatile variable.
     val requestedUndo = AtomicBoolean(false)
-
-    @Suppress("ComplexCondition")
-    fun showUndoSnackbar() {
-        val snackbar = FenixSnackbar
-            .make(
-                view = view,
-                duration = FenixSnackbar.LENGTH_INDEFINITE,
-                isDisplayedWithBrowserToolbar = false
-            )
-            .setText(message)
-            .setAnchorView(anchorView)
-            .setAction(undoActionTitle) {
-                requestedUndo.set(true)
-                launch {
-                    onCancel.invoke()
-                }
-            }
-
-        elevation?.also {
-            snackbar.view.elevation = it
-        }
-
-        val shouldUseBottomToolbar = view.context.settings().shouldUseBottomToolbar
-        val toolbarHeight = view.resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)
-        val dynamicToolbarEnabled = view.context.settings().isDynamicToolbarEnabled
-
-        snackbar.view.updatePadding(
-            bottom = if (
-                paddedForBottomToolbar &&
-                shouldUseBottomToolbar &&
-                // If the view passed in is a ContentFrameLayout, it does not matter
-                // if the user has a dynamicBottomToolbar or not, as the Android system
-                // can't intelligently position the snackbar on the upper most view.
-                // Ideally we should not pass ContentFrameLayout in, but it's the only
-                // way to display snackbars through a fragment transition.
-                (view is ContentFrameLayout || !dynamicToolbarEnabled)
-            ) {
-                toolbarHeight
-            } else {
-                0
-            }
+    val fakeBool = false
+    val snackbar = FenixSnackbar
+        .make(
+            view = parentView,
+            duration = FenixSnackbar.LENGTH_INDEFINITE,
+            isDisplayedWithBrowserToolbar = fakeBool
         )
-
-        snackbar.show()
-
-        // Wait a bit, and if user didn't request cancellation, proceed with
-        // requested operation and hide the snackbar.
-        launch {
-            delay(view.context.getUndoDelay())
-
-            if (!requestedUndo.get()) {
-                snackbar.dismiss()
-                operation.invoke()
+        .setText(message)
+        .setAnchorView(anchorView)
+        .setAction(actionTitle) {
+            requestedUndo.set(true)
+            launch {
+                onCancel.invoke()
             }
         }
+
+    elevation?.also {
+        snackbar.view.elevation = it
     }
 
-    showUndoSnackbar()
+    snackbar.show()
+
+    launch {
+        delay(parentView.context.getUndoDelay())
+
+        if (!requestedUndo.get()) {
+            snackbar.dismiss()
+            operation.invoke()
+        }
+    }
 }

@@ -38,12 +38,15 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.history.DefaultPagedHistoryProvider
 import org.mozilla.fenix.components.metrics.Event
+import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentHistoryBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
 import org.mozilla.fenix.ext.toShortUrl
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.utils.allowUndo
 
@@ -62,6 +65,11 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
         get() = _historyView!!
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
+    private val snackbarAnchorView: View?
+        get() = when (requireContext().settings().toolbarPosition) {
+            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
+            ToolbarPosition.TOP -> null
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -132,7 +140,8 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
         updatePendingHistoryToDelete(items)
         undoScope = CoroutineScope(IO)
         undoScope?.allowUndo(
-            requireView(),
+            requireActivity().getRootView()!!,
+            snackbarAnchorView,
             getMultiSelectSnackBarMessage(items),
             getString(R.string.bookmark_undo_deletion),
             {

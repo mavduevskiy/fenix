@@ -156,10 +156,11 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
         context.components.useCases.searchUseCases.removeSearchEngine(engine)
 
         MainScope().allowUndo(
-            view = context.getRootView()!!,
+            context.getRootView()!!,
+            null, // TODO can we get activity context here?
             message = context
                 .getString(R.string.search_delete_search_engine_success_message, engine.name),
-            undoActionTitle = context.getString(R.string.snackbar_deleted_undo),
+            actionTitle = context.getString(R.string.snackbar_deleted_undo),
             onCancel = {
                 context.components.useCases.searchUseCases.addSearchEngine(engine)
             },

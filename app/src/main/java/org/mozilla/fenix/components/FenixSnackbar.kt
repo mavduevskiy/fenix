@@ -11,9 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.ContentFrameLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.view.updatePadding
 import androidx.core.widget.TextViewCompat
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.ContentViewCallback
@@ -106,7 +104,7 @@ class FenixSnackbar private constructor(
                     "No suitable parent found from the given view. Please provide a valid view."
                 )
             }
-
+            println(isDisplayedWithBrowserToolbar)
             val inflater = LayoutInflater.from(parent.context)
             val binding = FenixSnackbarBinding.inflate(inflater, parent, false)
 
@@ -118,29 +116,36 @@ class FenixSnackbar private constructor(
                 }
 
             val callback = FenixSnackbarCallback(binding.root)
-            val shouldUseBottomToolbar = view.context.settings().shouldUseBottomToolbar
-            val toolbarHeight = view.resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)
-            val dynamicToolbarEnabled = view.context.settings().isDynamicToolbarEnabled
+//            val shouldUseBottomToolbar = view.context.settings().shouldUseBottomToolbar
+//            val toolbarHeight = view.resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)
+//            val dynamicToolbarEnabled = view.context.settings().isDynamicToolbarEnabled
 
             return FenixSnackbar(parent, binding, callback, isError).also {
                 it.duration = durationOrAccessibleDuration
 
-                it.view.updatePadding(
-                    bottom = if (
-                        isDisplayedWithBrowserToolbar &&
-                        shouldUseBottomToolbar &&
-                        // If the view passed in is a ContentFrameLayout, it does not matter
-                        // if the user has a dynamicBottomToolbar or not, as the Android system
-                        // can't intelligently position the snackbar on the upper most view.
-                        // Ideally we should not pass ContentFrameLayout in, but it's the only
-                        // way to display snackbars through a fragment transition.
-                        (view is ContentFrameLayout || !dynamicToolbarEnabled)
-                    ) {
-                        toolbarHeight
-                    } else {
-                        0
-                    }
-                )
+//                val shouldUseBottomToolbar = view.context.settings().shouldUseBottomToolbar
+//                if (isDisplayedWithBrowserToolbar && shouldUseBottomToolbar) {
+//                    view.findViewById<View>(R.id.anchorView)?.let { view ->
+//                        it.anchorView = view
+//                    }
+//                }
+
+//                it.view.updatePadding(
+//                    bottom = if (
+//                        isDisplayedWithBrowserToolbar &&
+//                        shouldUseBottomToolbar &&
+//                        // If the view passed in is a ContentFrameLayout, it does not matter
+//                        // if the user has a dynamicBottomToolbar or not, as the Android system
+//                        // can't intelligently position the snackbar on the upper most view.
+//                        // Ideally we should not pass ContentFrameLayout in, but it's the only
+//                        // way to display snackbars through a fragment transition.
+//                        (view is ContentFrameLayout || !dynamicToolbarEnabled)
+//                    ) {
+//                        toolbarHeight
+//                    } else {
+//                        0
+//                    }
+//                )
             }
         }
 

@@ -27,12 +27,15 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.StoreProvider
+import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentDownloadsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.filterNotExistsOnDisk
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.utils.allowUndo
 
@@ -47,6 +50,11 @@ class DownloadFragment : LibraryPageFragment<DownloadItem>(), UserInteractionHan
 
     private var _binding: FragmentDownloadsBinding? = null
     private val binding get() = _binding!!
+    private val snackbarAnchorView: View?
+        get() = when (requireContext().settings().toolbarPosition) {
+            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
+            ToolbarPosition.TOP -> null
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -130,7 +138,8 @@ class DownloadFragment : LibraryPageFragment<DownloadItem>(), UserInteractionHan
         updatePendingDownloadToDelete(items)
         undoScope = CoroutineScope(IO)
         undoScope?.allowUndo(
-            requireView(),
+            requireActivity().getRootView()!!,
+            snackbarAnchorView,
             getMultiSelectSnackBarMessage(items),
             getString(R.string.bookmark_undo_deletion),
             onCancel = {
