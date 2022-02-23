@@ -13,12 +13,17 @@ import org.mozilla.fenix.components.FenixSnackbar
  * @param view A [View] used to determine a parent for the [FenixSnackbar].
  * @param text The text to display in the [FenixSnackbar].
  */
-internal fun showSnackBar(view: View, text: String, duration: Int = FenixSnackbar.LENGTH_SHORT) {
+internal fun showSnackBar(
+    parentView: View,
+    anchorView: View?,
+    text: String,
+    duration: Int = FenixSnackbar.LENGTH_SHORT
+) {
     FenixSnackbar.make(
-        view = view,
-        duration = duration,
-        isDisplayedWithBrowserToolbar = true
+        view = parentView,
+        duration = duration
     )
         .setText(text)
+        .setAnchorView(anchorView)
         .show()
 }

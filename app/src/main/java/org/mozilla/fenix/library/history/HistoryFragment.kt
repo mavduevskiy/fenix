@@ -317,7 +317,8 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
                             viewModel.invalidate()
                             historyStore.dispatch(HistoryFragmentAction.ExitDeletionMode)
                             showSnackBar(
-                                requireView(),
+                                requireActivity().getRootView()!!,
+                                snackbarAnchorView,
                                 getString(R.string.preferences_delete_browsing_data_snackbar)
                             )
                         }

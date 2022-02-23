@@ -31,10 +31,14 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.ktx.android.view.toScope
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifChanged
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.SearchEngineRadioButtonBinding
+import org.mozilla.fenix.ext.asActivity
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.allowUndo
 
 class RadioSearchEngineListPreference @JvmOverloads constructor(
@@ -44,6 +48,12 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
 ) : Preference(context, attrs, defStyleAttr), CompoundButton.OnCheckedChangeListener {
     private val itemResId: Int
         get() = R.layout.search_engine_radio_button
+
+    private val snackbarAnchorView: View?
+        get() = when (context.settings().toolbarPosition) {
+            ToolbarPosition.BOTTOM -> (context.asActivity() as HomeActivity).findViewById(R.id.anchorView)
+            ToolbarPosition.TOP -> null
+        }
 
     init {
         layoutResource = R.layout.preference_search_engine_chooser
@@ -157,9 +167,8 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
 
         MainScope().allowUndo(
             context.getRootView()!!,
-            null, // TODO can we get activity context here?
-            message = context
-                .getString(R.string.search_delete_search_engine_success_message, engine.name),
+            snackbarAnchorView,
+            message = context.getString(R.string.search_delete_search_engine_success_message, engine.name),
             actionTitle = context.getString(R.string.snackbar_deleted_undo),
             onCancel = {
                 context.components.useCases.searchUseCases.addSearchEngine(engine)

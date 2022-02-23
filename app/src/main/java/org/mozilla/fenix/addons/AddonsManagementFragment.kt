@@ -28,9 +28,11 @@ import mozilla.components.feature.addons.ui.PermissionsDialogFragment
 import mozilla.components.feature.addons.ui.translateName
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.metrics.Event
+import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentAddOnsManagementBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getRootView
@@ -51,6 +53,11 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
     private val args by navArgs<AddonsManagementFragmentArgs>()
 
     private var binding: FragmentAddOnsManagementBinding? = null
+    private val snackbarAnchorView: View?
+        get() = when (requireContext().settings().toolbarPosition) {
+            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
+            ToolbarPosition.TOP -> null
+        }
 
     /**
      * Whether or not an add-on installation is in progress.
@@ -146,9 +153,11 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
             } catch (e: AddonManagerException) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     runIfFragmentIsAttached {
-                        binding?.let {
-                            showSnackBar(it.root, getString(R.string.mozac_feature_addons_failed_to_query_add_ons))
-                        }
+                        showSnackBar(
+                            requireActivity().getRootView()!!,
+                            snackbarAnchorView,
+                            getString(R.string.mozac_feature_addons_failed_to_query_add_ons)
+                        )
                         isInstallationInProgress = false
                         binding?.addOnsProgressBar?.isVisible = false
                         binding?.addOnsEmptyMessage?.isVisible = true
@@ -176,9 +185,12 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
     @VisibleForTesting
     internal fun showErrorSnackBar(text: String) {
         runIfFragmentIsAttached {
-            view?.let {
-                showSnackBar(it, text, FenixSnackbar.LENGTH_LONG)
-            }
+            showSnackBar(
+                requireActivity().getRootView()!!,
+                snackbarAnchorView,
+                text,
+                FenixSnackbar.LENGTH_LONG
+            )
         }
     }
 
@@ -297,13 +309,13 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
                 }
             },
             onError = { _, e ->
-                this@AddonsManagementFragment.view?.let { view ->
+                runIfFragmentIsAttached {
                     // No need to display an error message if installation was cancelled by the user.
                     if (e !is CancellationException) {
-                        val rootView = activity?.getRootView() ?: view
                         context?.let {
                             showSnackBar(
-                                rootView,
+                                requireActivity().getRootView()!!,
+                                snackbarAnchorView,
                                 getString(
                                     R.string.mozac_feature_addons_failed_to_install,
                                     addon.translateName(it)

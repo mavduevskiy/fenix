@@ -7,17 +7,17 @@ package org.mozilla.fenix.perf
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
-import android.widget.FrameLayout
+import android.widget.LinearLayout
 import mozilla.components.concept.base.profiler.Profiler
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.perf.ProfilerMarkers.MEASURE_LAYOUT_DRAW_MARKER_NAME
 
 /**
- * A [FrameLayout] that adds profiler markers for various methods. This is intended to be used on
+ * A [LinearLayout] that adds profiler markers for various methods. This is intended to be used on
  * the root view of [HomeActivity]'s view hierarchy to understand global measure/layout events.
  */
-class HomeActivityRootFrameLayout(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
+class HomeActivityRootLinearLayout(context: Context, attrs: AttributeSet) : LinearLayout(context, attrs) {
 
     private val profiler: Profiler? = context.components.core.engine.profiler
 
