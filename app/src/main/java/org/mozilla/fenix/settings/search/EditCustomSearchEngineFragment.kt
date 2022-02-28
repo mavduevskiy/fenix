@@ -25,6 +25,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.databinding.CustomSearchEngineBinding
 import org.mozilla.fenix.databinding.FragmentAddSearchEngineBinding
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
@@ -135,18 +137,12 @@ class EditCustomSearchEngineFragment : Fragment(R.layout.fragment_add_search_eng
 
                     requireComponents.useCases.searchUseCases.addSearchEngine(update)
 
-                    val successMessage = resources
-                        .getString(R.string.search_edit_custom_engine_success_message, name)
-
-                    view?.also {
-                        FenixSnackbar.make(
-                            view = it,
-                            duration = FenixSnackbar.LENGTH_SHORT,
-                            isDisplayedWithBrowserToolbar = false
-                        )
-                            .setText(successMessage)
-                            .show()
-                    }
+                    FenixSnackbar.make(
+                        parentView = requireActivity().getRootView()!!,
+                        anchorView = requireActivity().getSnackbarAnchorView(),
+                        text = getString(R.string.search_edit_custom_engine_success_message, name),
+                        duration = FenixSnackbar.LENGTH_SHORT
+                    ).show()
 
                     findNavController().popBackStack()
                 }

@@ -73,7 +73,8 @@ class BrowserToolbarView(
                 WeakReference(view),
                 customTabSession?.id,
                 interactor::onBrowserToolbarPasteAndGo,
-                interactor::onBrowserToolbarPaste
+                interactor::onBrowserToolbarPaste,
+                snackbarAnchorView = if (settings.toolbarPosition == ToolbarPosition.BOTTOM) WeakReference(view) else null
             )
             true
         }

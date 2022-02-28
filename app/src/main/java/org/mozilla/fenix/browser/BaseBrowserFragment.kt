@@ -361,7 +361,7 @@ abstract class BaseBrowserFragment :
             readerModeController = readerMenuController,
             sessionFeature = sessionFeature,
             findInPageLauncher = { findInPageIntegration.withFeature { it.launch() } },
-            swipeRefresh = binding.swipeRefresh,
+            coordinatorLayout = binding.browserLayout,
             browserAnimator = browserAnimator,
             customTabSessionId = customTabSessionId,
             openInFenixIntent = openInFenixIntent,
@@ -836,12 +836,10 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     internal fun expandToolbarOnNavigation(store: BrowserStore) {
         consumeFlow(store) { flow ->
-            flow.mapNotNull {
-                state ->
+            flow.mapNotNull { state ->
                 state.findCustomTabOrSelectedTab(customTabSessionId)
             }
-                .ifAnyChanged {
-                    tab ->
+                .ifAnyChanged { tab ->
                     arrayOf(tab.content.url, tab.content.loadRequest)
                 }
                 .collect {
@@ -1244,38 +1242,33 @@ abstract class BaseBrowserFragment :
                 withContext(Main) {
                     requireComponents.analytics.metrics.track(Event.AddBookmark)
 
-                    view?.let {
-                        FenixSnackbar.make(
-                            view = binding.browserLayout,
-                            duration = FenixSnackbar.LENGTH_LONG,
-                            isDisplayedWithBrowserToolbar = true
+                    // anchorView is null because parentView is CoordinatorLayout that
+                    // that handles Snackbar automatically.
+                    FenixSnackbar.make(
+                        parentView = binding.browserLayout,
+                        anchorView = null,
+                        text = getString(R.string.bookmark_saved_snackbar)
+                    ).setAction(getString(R.string.edit_bookmark_snackbar_action)) {
+                        nav(
+                            R.id.browserFragment,
+                            BrowserFragmentDirections.actionGlobalBookmarkEditFragment(
+                                guid,
+                                true
+                            )
                         )
-                            .setText(getString(R.string.bookmark_saved_snackbar))
-                            .setAction(getString(R.string.edit_bookmark_snackbar_action)) {
-                                nav(
-                                    R.id.browserFragment,
-                                    BrowserFragmentDirections.actionGlobalBookmarkEditFragment(
-                                        guid,
-                                        true
-                                    )
-                                )
-                            }
-                            .show()
-                    }
+                    }.show()
                 }
             } catch (e: PlacesException.UrlParseFailed) {
                 withContext(Main) {
                     requireComponents.analytics.metrics.track(Event.AddBookmark)
 
-                    view?.let {
-                        FenixSnackbar.make(
-                            view = binding.browserLayout,
-                            duration = FenixSnackbar.LENGTH_LONG,
-                            isDisplayedWithBrowserToolbar = true
-                        )
-                            .setText(getString(R.string.bookmark_invalid_url_error))
-                            .show()
-                    }
+                    // anchorView is null because parentView is CoordinatorLayout that
+                    // that handles Snackbar automatically.
+                    FenixSnackbar.make(
+                        parentView = binding.browserLayout,
+                        anchorView = null,
+                        text = getString(R.string.bookmark_invalid_url_error)
+                    ).show()
                 }
             }
         }
@@ -1311,13 +1304,16 @@ abstract class BaseBrowserFragment :
         if (inFullScreen) {
             // Close find in page bar if opened
             findInPageIntegration.onBackPressed()
+
+            // anchorView is null because parentView is CoordinatorLayout that
+            // that handles Snackbar automatically.
             FenixSnackbar.make(
-                view = binding.browserLayout,
-                duration = Snackbar.LENGTH_SHORT,
-                isDisplayedWithBrowserToolbar = false
-            )
-                .setText(getString(R.string.full_screen_notification))
-                .show()
+                parentView = binding.browserLayout,
+                anchorView = null,
+                text = getString(R.string.full_screen_notification),
+                duration = Snackbar.LENGTH_SHORT
+            ).show()
+
             activity?.enterToImmersiveMode()
             browserToolbarView.collapse()
             browserToolbarView.view.isVisible = false
@@ -1390,12 +1386,14 @@ abstract class BaseBrowserFragment :
         context: Context,
         downloadState: DownloadState
     ) {
+        // anchorView is null because parentView is CoordinatorLayout that
+        // that handles Snackbar automatically.
         FenixSnackbar.make(
-            view = view,
-            duration = Snackbar.LENGTH_SHORT,
-            isDisplayedWithBrowserToolbar = true
-        ).setText(DynamicDownloadDialog.getCannotOpenFileErrorMessage(context, downloadState))
-            .show()
+            parentView = view,
+            anchorView = null,
+            text = DynamicDownloadDialog.getCannotOpenFileErrorMessage(context, downloadState),
+            duration = Snackbar.LENGTH_SHORT
+        ).show()
     }
 
     companion object {

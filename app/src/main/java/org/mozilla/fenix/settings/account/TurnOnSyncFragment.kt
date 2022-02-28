@@ -26,6 +26,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.databinding.FragmentTurnOnSyncBinding
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -150,18 +152,15 @@ class TurnOnSyncFragment : Fragment(), AccountObserver {
         if (view == null) {
             return
         }
-        val snackbarText = requireContext().getString(R.string.sync_syncing_in_progress)
-        val snackbarLength = FenixSnackbar.LENGTH_SHORT
 
         // Since the snackbar can be presented in BrowserFragment or in SettingsFragment we must
         // base our display method on the padSnackbar argument
         FenixSnackbar.make(
-            view = requireView(),
-            duration = snackbarLength,
-            isDisplayedWithBrowserToolbar = args.padSnackbar
-        )
-            .setText(snackbarText)
-            .show()
+            parentView = requireActivity().getRootView()!!,
+            anchorView = requireActivity().getSnackbarAnchorView(), //if (args.padSnackbar) snackbarAnchorView else null, // TODO check, noticed bug after logging via QR code
+            text = getString(R.string.sync_syncing_in_progress),
+            duration = FenixSnackbar.LENGTH_SHORT
+        ).show()
     }
 
     private fun navigateToPairWithEmail() {

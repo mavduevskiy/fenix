@@ -46,6 +46,7 @@ import org.mozilla.fenix.ext.placeCursorAtEnd
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setToolbarColors
 import org.mozilla.fenix.ext.toShortUrl
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.library.bookmarks.BookmarksSharedViewModel
 import org.mozilla.fenix.library.bookmarks.friendlyRootTitle
 
@@ -216,17 +217,14 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
 
                             bookmarkNode?.let { bookmark ->
                                 FenixSnackbar.make(
-                                    view = activity.getRootView()!!,
-                                    isDisplayedWithBrowserToolbar = args.requiresSnackbarPaddingForToolbar
-                                )
-                                    .setText(
-                                        getString(
-                                            R.string.bookmark_deletion_snackbar_message,
-                                            bookmark.url?.toShortUrl(context.components.publicSuffixList)
-                                                ?: bookmark.title
-                                        )
+                                    parentView = activity.getRootView()!!,
+                                    anchorView = activity.getSnackbarAnchorView(),
+                                    text = getString(
+                                        R.string.bookmark_deletion_snackbar_message,
+                                        bookmark.url?.toShortUrl(context.components.publicSuffixList)
+                                            ?: bookmark.title
                                     )
-                                    .show()
+                                ).show()
                             }
                         }
                     }

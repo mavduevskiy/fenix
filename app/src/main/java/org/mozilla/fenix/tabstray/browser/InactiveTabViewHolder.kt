@@ -73,7 +73,8 @@ sealed class InactiveTabViewHolder(itemView: View) : RecyclerView.ViewHolder(ite
 
     class AutoCloseDialogHolder(
         itemView: View,
-        interactor: InactiveTabsAutoCloseDialogInteractor
+        interactor: InactiveTabsAutoCloseDialogInteractor,
+        val snackbarAnchorView: View?
     ) : InactiveTabViewHolder(itemView) {
         private val binding = InactiveTabsAutoCloseBinding.bind(itemView)
 
@@ -91,15 +92,14 @@ sealed class InactiveTabViewHolder(itemView: View) : RecyclerView.ViewHolder(ite
 
         private fun showConfirmationSnackbar() {
             val context = binding.root.context
-            val view = binding.root
-            val text = context.getString(R.string.inactive_tabs_auto_close_message_snackbar)
-            val snackbar = FenixSnackbar.make(
-                view = view,
+            FenixSnackbar.make(
+                parentView = binding.root,
+                anchorView = snackbarAnchorView,
+                text = context.getString(R.string.inactive_tabs_auto_close_message_snackbar),
                 duration = FenixSnackbar.LENGTH_SHORT,
-                isDisplayedWithBrowserToolbar = true
-            ).setText(text)
-            snackbar.view.elevation = TabsTrayFragment.ELEVATION
-            snackbar.show()
+            )
+                .apply { view.elevation = TabsTrayFragment.ELEVATION }
+                .show()
         }
 
         companion object {

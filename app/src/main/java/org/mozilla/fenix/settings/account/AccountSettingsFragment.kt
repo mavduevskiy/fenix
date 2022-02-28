@@ -45,6 +45,8 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.settings.requirePreference
 
 @SuppressWarnings("TooManyFunctions", "LargeClass")
@@ -376,12 +378,11 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
         return Preference.OnPreferenceChangeListener { _, newValue ->
             accountSettingsInteractor.onChangeDeviceName(newValue as String) {
                 FenixSnackbar.make(
-                    view = requireView(),
+                    parentView = requireActivity().getRootView()!!,
+                    anchorView = requireActivity().getSnackbarAnchorView(),
+                    text = getString(R.string.empty_device_name_error),
                     duration = FenixSnackbar.LENGTH_LONG,
-                    isDisplayedWithBrowserToolbar = false
-                )
-                    .setText(getString(R.string.empty_device_name_error))
-                    .show()
+                ).show()
             }
         }
     }

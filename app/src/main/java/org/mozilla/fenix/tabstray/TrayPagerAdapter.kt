@@ -6,6 +6,7 @@ package org.mozilla.fenix.tabstray
 
 import android.content.Context
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.ConcatAdapter
@@ -33,7 +34,8 @@ class TrayPagerAdapter(
     @VisibleForTesting internal val navInteractor: NavigationInteractor,
     @VisibleForTesting internal val interactor: TabsTrayInteractor,
     @VisibleForTesting internal val browserStore: BrowserStore,
-    @VisibleForTesting internal val appStore: AppStore
+    @VisibleForTesting internal val appStore: AppStore,
+    private val snackbarAnchorView: View?
 ) : RecyclerView.Adapter<AbstractPageViewHolder>() {
 
     /**
@@ -43,7 +45,7 @@ class TrayPagerAdapter(
      */
     private val normalAdapter by lazy {
         ConcatAdapter(
-            InactiveTabsAdapter(context, browserInteractor, interactor, INACTIVE_TABS_FEATURE_NAME, context.settings()),
+            InactiveTabsAdapter(context, browserInteractor, interactor, INACTIVE_TABS_FEATURE_NAME, context.settings(), snackbarAnchorView),
             TabGroupAdapter(context, browserInteractor, tabsTrayStore, TAB_GROUP_FEATURE_NAME),
             TitleHeaderAdapter(),
             BrowserTabsAdapter(context, browserInteractor, tabsTrayStore, TABS_TRAY_FEATURE_NAME)

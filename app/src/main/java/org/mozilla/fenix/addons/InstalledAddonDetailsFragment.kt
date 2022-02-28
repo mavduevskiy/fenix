@@ -23,9 +23,11 @@ import mozilla.components.feature.addons.ui.translateName
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.metrics.Event
-import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
-import org.mozilla.fenix.ext.*
+import org.mozilla.fenix.ext.getSnackbarAnchorView
+import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 
 /**
@@ -36,11 +38,6 @@ class InstalledAddonDetailsFragment : Fragment() {
     private lateinit var addon: Addon
     private var _binding: FragmentInstalledAddOnDetailsBinding? = null
     private val binding get() = _binding!!
-    private val snackbarAnchorView: View?
-        get() = when (requireContext().settings().toolbarPosition) {
-            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
-            ToolbarPosition.TOP -> null
-        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -102,7 +99,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                     runIfFragmentIsAttached {
                         showSnackBar(
                             requireActivity().getRootView()!!,
-                            snackbarAnchorView,
+                            requireActivity().getSnackbarAnchorView(),
                             getString(R.string.mozac_feature_addons_failed_to_query_add_ons)
                         )
                         findNavController().popBackStack()
@@ -145,7 +142,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                             context?.let {
                                 showSnackBar(
                                     requireActivity().getRootView()!!,
-                                    snackbarAnchorView,
+                                    requireActivity().getSnackbarAnchorView(),
                                     getString(
                                         R.string.mozac_feature_addons_successfully_enabled,
                                         addon.translateName(it)
@@ -162,7 +159,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                             context?.let {
                                 showSnackBar(
                                     requireActivity().getRootView()!!,
-                                    snackbarAnchorView,
+                                    requireActivity().getSnackbarAnchorView(),
                                     getString(
                                         R.string.mozac_feature_addons_failed_to_enable,
                                         addon.translateName(it)
@@ -186,7 +183,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                             context?.let {
                                 showSnackBar(
                                     requireActivity().getRootView()!!,
-                                    snackbarAnchorView,
+                                    requireActivity().getSnackbarAnchorView(),
                                     getString(
                                         R.string.mozac_feature_addons_successfully_disabled,
                                         addon.translateName(it)
@@ -204,7 +201,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                             context?.let {
                                 showSnackBar(
                                     requireActivity().getRootView()!!,
-                                    snackbarAnchorView,
+                                    requireActivity().getSnackbarAnchorView(),
                                     getString(
                                         R.string.mozac_feature_addons_failed_to_disable,
                                         addon.translateName(it)
@@ -302,7 +299,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                         context?.let {
                             showSnackBar(
                                 requireActivity().getRootView()!!,
-                                snackbarAnchorView,
+                                requireActivity().getSnackbarAnchorView(),
                                 getString(
                                     R.string.mozac_feature_addons_successfully_uninstalled,
                                     addon.translateName(it)
@@ -318,7 +315,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                         context?.let {
                             showSnackBar(
                                 requireActivity().getRootView()!!,
-                                snackbarAnchorView,
+                                requireActivity().getSnackbarAnchorView(),
                                 getString(
                                     R.string.mozac_feature_addons_failed_to_uninstall,
                                     addon.translateName(it)

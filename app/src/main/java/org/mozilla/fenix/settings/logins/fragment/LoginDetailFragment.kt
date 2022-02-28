@@ -35,6 +35,8 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.simplifiedUrl
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.settings.logins.LoginsFragmentStore
 import org.mozilla.fenix.settings.logins.SavedLogin
 import org.mozilla.fenix.settings.logins.controller.SavedLoginsStorageController
@@ -225,13 +227,12 @@ class LoginDetailFragment : SecureFragment(R.layout.fragment_login_detail) {
         }
 
         private fun showCopiedSnackbar(copiedItem: String) {
-            view?.let {
-                FenixSnackbar.make(
-                    view = it,
-                    duration = Snackbar.LENGTH_SHORT,
-                    isDisplayedWithBrowserToolbar = false
-                ).setText(copiedItem).show()
-            }
+            FenixSnackbar.make(
+                parentView = requireActivity().getRootView()!!,
+                anchorView = requireActivity().getSnackbarAnchorView(),
+                text = copiedItem,
+                duration = Snackbar.LENGTH_SHORT
+            ).show()
         }
     }
 

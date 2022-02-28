@@ -7,8 +7,8 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.navigation.NavController
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +66,7 @@ class DefaultBrowserToolbarMenuController(
     private val sessionFeature: ViewBoundFeatureWrapper<SessionFeature>,
     private val findInPageLauncher: () -> Unit,
     private val browserAnimator: BrowserAnimator,
-    private val swipeRefresh: SwipeRefreshLayout,
+    private val coordinatorLayout: CoordinatorLayout,
     private val customTabSessionId: String?,
     private val openInFenixIntent: Intent,
     private val bookmarkTapped: (String, String) -> Unit,
@@ -149,14 +149,15 @@ class DefaultBrowserToolbarMenuController(
             is ToolbarMenu.Item.Quit -> {
                 // We need to show the snackbar while the browsing data is deleting (if "Delete
                 // browsing data on quit" is activated). After the deletion is over, the snackbar
-                // is dismissed.
+                // is dismissed. anchorView is null because parentView is CoordinatorLayout that
+                // that handles Snackbar automatically.
                 val snackbar: FenixSnackbar? = activity.getRootView()?.let { v ->
                     FenixSnackbar.make(
-                        view = v,
-                        duration = Snackbar.LENGTH_LONG,
-                        isDisplayedWithBrowserToolbar = true
+                        parentView = v,
+                        anchorView = null,
+                        text = activity.getString(R.string.deleting_browsing_data_in_progress),
+                        duration = Snackbar.LENGTH_INDEFINITE
                     )
-                        .setText(v.context.getString(R.string.deleting_browsing_data_in_progress))
                 }
 
                 deleteAndQuit(activity, scope, snackbar)
@@ -249,12 +250,11 @@ class DefaultBrowserToolbarMenuController(
             }
             is ToolbarMenu.Item.AddToTopSites -> {
                 scope.launch {
-                    val context = swipeRefresh.context
                     val numPinnedSites = topSitesStorage.cachedTopSites
                         .filter { it !is TopSite.Frecent || it !is TopSite.Provided }.size
 
                     if (numPinnedSites >= settings.topSitesMaxLimit) {
-                        AlertDialog.Builder(swipeRefresh.context).apply {
+                        AlertDialog.Builder(activity).apply {
                             setTitle(R.string.top_sites_max_limit_title)
                             setMessage(R.string.top_sites_max_limit_content_2)
                             setPositiveButton(R.string.top_sites_max_limit_confirmation_button) { dialog, _ ->
@@ -271,15 +271,14 @@ class DefaultBrowserToolbarMenuController(
                             }
                         }.join()
 
+                        // anchorView is null because parentView is CoordinatorLayout that
+                        // that handles Snackbar automatically.
                         FenixSnackbar.make(
-                            view = swipeRefresh,
-                            duration = Snackbar.LENGTH_SHORT,
-                            isDisplayedWithBrowserToolbar = true
-                        )
-                            .setText(
-                                context.getString(R.string.snackbar_added_to_top_sites)
-                            )
-                            .show()
+                            parentView = coordinatorLayout,
+                            anchorView = null,
+                            text = activity.getString(R.string.snackbar_added_to_top_sites),
+                            duration = Snackbar.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -373,15 +372,14 @@ class DefaultBrowserToolbarMenuController(
                         }.join()
                     }
 
+                    // anchorView is null because parentView is CoordinatorLayout that
+                    // that handles Snackbar automatically.
                     FenixSnackbar.make(
-                        view = swipeRefresh,
-                        duration = Snackbar.LENGTH_SHORT,
-                        isDisplayedWithBrowserToolbar = true
-                    )
-                        .setText(
-                            swipeRefresh.context.getString(R.string.snackbar_top_site_removed)
-                        )
-                        .show()
+                        parentView = coordinatorLayout,
+                        anchorView = null,
+                        text = activity.getString(R.string.snackbar_top_site_removed),
+                        duration = Snackbar.LENGTH_SHORT
+                    ).show()
                 }
             }
         }

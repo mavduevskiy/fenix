@@ -465,7 +465,8 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                 navigationInteractor,
                 trayInteractor,
                 requireComponents.core.store,
-                requireComponents.appStore
+                requireComponents.appStore,
+                snackbarAnchorView
             )
             isUserInputEnabled = false
         }

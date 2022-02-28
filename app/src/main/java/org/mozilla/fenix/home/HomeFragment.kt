@@ -102,6 +102,7 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.home.mozonline.showPrivacyPopWindow
 import org.mozilla.fenix.home.pocket.DefaultPocketStoriesController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
@@ -518,10 +519,11 @@ class HomeFragment : Fragment() {
 
         binding.toolbarWrapper.setOnLongClickListener {
             ToolbarPopupWindow.show(
-                WeakReference(it),
+                WeakReference(requireActivity().getRootView()!!),
                 handlePasteAndGo = sessionControlInteractor::onPasteAndGo,
                 handlePaste = sessionControlInteractor::onPaste,
-                copyVisible = false
+                copyVisible = false,
+                snackbarAnchorView = WeakReference(snackbarAnchorView)
             )
             true
         }
@@ -732,16 +734,12 @@ class HomeFragment : Fragment() {
                 object : AccountObserver {
                     override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
                         if (authType != AuthType.Existing) {
-                            view?.let {
-                                FenixSnackbar.make(
-                                    view = it,
-                                    duration = Snackbar.LENGTH_SHORT,
-                                    isDisplayedWithBrowserToolbar = false
-                                )
-                                    .setText(it.context.getString(R.string.onboarding_firefox_account_sync_is_on))
-                                    .setAnchorView(binding.toolbarLayout)
-                                    .show()
-                            }
+                            FenixSnackbar.make(
+                                parentView = requireActivity().getRootView()!!,
+                                anchorView = snackbarAnchorView,
+                                text = getString(R.string.onboarding_firefox_account_sync_is_on),
+                                duration = Snackbar.LENGTH_SHORT,
+                            ).show()
                         }
                     }
                 },
@@ -1008,12 +1006,12 @@ class HomeFragment : Fragment() {
                         deleteAndQuit(
                             activity,
                             viewLifecycleOwner.lifecycleScope,
-                            view?.let { view ->
-                                FenixSnackbar.make(
-                                    view = view,
-                                    isDisplayedWithBrowserToolbar = false
-                                )
-                            }
+                            FenixSnackbar.make(
+                                parentView = activity.getRootView()!!,
+                                anchorView = snackbarAnchorView,
+                                text = activity.getString(R.string.deleting_browsing_data_in_progress),
+                                duration = Snackbar.LENGTH_INDEFINITE
+                            )
                         )
                     }
                     HomeMenu.Item.ReconnectSync -> {
@@ -1179,17 +1177,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun showRenamedSnackbar() {
-        view?.let { view ->
-            val string = view.context.getString(R.string.snackbar_collection_renamed)
-            FenixSnackbar.make(
-                view = view,
-                duration = Snackbar.LENGTH_LONG,
-                isDisplayedWithBrowserToolbar = false
-            )
-                .setText(string)
-                .setAnchorView(snackbarAnchorView)
-                .show()
-        }
+        FenixSnackbar.make(
+            parentView = requireActivity().getRootView()!!,
+            anchorView = snackbarAnchorView,
+            text = getString(R.string.snackbar_collection_renamed)
+        ).show()
     }
 
     private fun openTabsTray() {

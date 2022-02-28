@@ -333,31 +333,30 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             tabSize: Int,
             isNewCollection: Boolean = false
         ) {
-            view?.let { view ->
-                val messageStringRes = when {
-                    isNewCollection -> {
-                        R.string.create_collection_tabs_saved_new_collection
-                    }
-                    tabSize > 1 -> {
-                        R.string.create_collection_tabs_saved
-                    }
-                    else -> {
-                        R.string.create_collection_tab_saved
-                    }
+            val messageStringRes = when {
+                isNewCollection -> {
+                    R.string.create_collection_tabs_saved_new_collection
                 }
-                FenixSnackbar.make(
-                    view = binding.browserLayout,
-                    duration = Snackbar.LENGTH_SHORT,
-                    isDisplayedWithBrowserToolbar = true
-                )
-                    .setText(view.context.getString(messageStringRes))
-                    .setAction(requireContext().getString(R.string.create_collection_view)) {
-                        findNavController().navigate(
-                            BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = false)
-                        )
-                    }
-                    .show()
+                tabSize > 1 -> {
+                    R.string.create_collection_tabs_saved
+                }
+                else -> {
+                    R.string.create_collection_tab_saved
+                }
             }
+
+            // anchorView is null because parentView is CoordinatorLayout that
+            // that handles Snackbar automatically.
+            FenixSnackbar.make(
+                parentView = binding.browserLayout,
+                anchorView = null,
+                text = getString(messageStringRes),
+                duration = Snackbar.LENGTH_SHORT
+            ).setAction(requireContext().getString(R.string.create_collection_view)) {
+                findNavController().navigate(
+                    BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = false)
+                )
+            }.show()
         }
     }
 

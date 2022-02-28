@@ -16,8 +16,11 @@ import android.view.accessibility.AccessibilityManager
 import androidx.annotation.StringRes
 import mozilla.components.support.locale.LocaleManager
 import org.mozilla.fenix.FenixApplication
+import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.metrics.MetricController
+import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.settings.advanced.getSelectedLocale
 import java.lang.String.format
 import java.util.Locale
@@ -53,6 +56,14 @@ fun Context.getPreferenceKey(@StringRes resourceId: Int): String =
  */
 fun Context.getRootView(): View? =
     asActivity()?.window?.decorView?.findViewById<View>(android.R.id.content) as? ViewGroup
+
+/**
+ * Gets the anchor view for Snackbar with an activity context
+ */
+fun Context.getSnackbarAnchorView(): View? = when (this.settings().toolbarPosition) {
+    ToolbarPosition.BOTTOM -> (asActivity() as HomeActivity).findViewById(R.id.anchorView)
+    ToolbarPosition.TOP -> null
+}
 
 fun Context.settings() = components.settings
 

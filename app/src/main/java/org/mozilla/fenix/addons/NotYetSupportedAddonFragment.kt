@@ -14,14 +14,12 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import mozilla.components.feature.addons.ui.UnsupportedAddonsAdapter
 import mozilla.components.feature.addons.ui.UnsupportedAddonsAdapterDelegate
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentNotYetSupportedAddonsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.ext.getRootView
 
 private const val LEARN_MORE_URL =
@@ -35,11 +33,6 @@ class NotYetSupportedAddonFragment :
 
     private val args by navArgs<NotYetSupportedAddonFragmentArgs>()
     private var unsupportedAddonsAdapter: UnsupportedAddonsAdapter? = null
-    private val snackbarAnchorView: View?
-        get() = when (requireContext().settings().toolbarPosition) {
-            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
-            ToolbarPosition.TOP -> null
-        }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -72,7 +65,7 @@ class NotYetSupportedAddonFragment :
         runIfFragmentIsAttached {
             showSnackBar(
                 requireActivity().getRootView()!!,
-                snackbarAnchorView,
+                requireActivity().getSnackbarAnchorView(),
                 getString(R.string.mozac_feature_addons_failed_to_remove, "")
             )
         }
@@ -86,8 +79,9 @@ class NotYetSupportedAddonFragment :
         runIfFragmentIsAttached {
             showSnackBar(
                 requireActivity().getRootView()!!,
-                snackbarAnchorView,
-                getString(R.string.mozac_feature_addons_successfully_removed, ""))
+                requireActivity().getSnackbarAnchorView(),
+                getString(R.string.mozac_feature_addons_successfully_removed, "")
+            )
         }
     }
 }

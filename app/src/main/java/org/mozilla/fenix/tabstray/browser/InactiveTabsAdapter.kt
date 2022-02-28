@@ -6,6 +6,7 @@ package org.mozilla.fenix.tabstray.browser
 
 import android.content.Context
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -39,6 +40,7 @@ class InactiveTabsAdapter(
     private val tabsTrayInteractor: TabsTrayInteractor,
     override val featureName: String,
     private val settings: Settings,
+    private val snackbarAnchorView: View?
 ) : Adapter(DiffCallback), TabsTray, FeatureNameHolder {
 
     internal lateinit var inactiveTabsInteractor: InactiveTabsInteractor
@@ -49,7 +51,7 @@ class InactiveTabsAdapter(
             .inflate(viewType, parent, false)
 
         return when (viewType) {
-            AutoCloseDialogHolder.LAYOUT_ID -> AutoCloseDialogHolder(view, inactiveTabsInteractor)
+            AutoCloseDialogHolder.LAYOUT_ID -> AutoCloseDialogHolder(view, inactiveTabsInteractor, snackbarAnchorView)
             HeaderHolder.LAYOUT_ID -> HeaderHolder(view, inactiveTabsInteractor, tabsTrayInteractor)
             TabViewHolder.LAYOUT_ID -> TabViewHolder(view, browserTrayInteractor, featureName)
             FooterHolder.LAYOUT_ID -> FooterHolder(view)

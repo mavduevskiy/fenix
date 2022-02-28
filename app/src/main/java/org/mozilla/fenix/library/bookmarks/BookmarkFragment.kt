@@ -43,7 +43,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.metrics.Event
-import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentBookmarkBinding
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.components
@@ -53,7 +52,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.ext.getRootView
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.utils.allowUndo
 
@@ -76,11 +75,6 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
 
     private var _binding: FragmentBookmarkBinding? = null
     private val binding get() = _binding!!
-    private val snackbarAnchorView: View?
-        get() = when (requireContext().settings().toolbarPosition) {
-            ToolbarPosition.BOTTOM -> (activity as HomeActivity).findViewById(R.id.anchorView)
-            ToolbarPosition.TOP -> null
-        }
 
     private val metrics
         get() = context?.components?.analytics?.metrics
@@ -133,9 +127,10 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
     private fun showSnackBarWithText(text: String) {
         view?.let {
             FenixSnackbar.make(
-                view = it,
-                duration = FenixSnackbar.LENGTH_LONG,
-                isDisplayedWithBrowserToolbar = false
+                parentView = requireActivity().getRootView()!!,
+                anchorView = requireActivity().getSnackbarAnchorView(),
+                text = text,
+                duration = FenixSnackbar.LENGTH_LONG
             ).setText(text).show()
         }
     }
@@ -316,7 +311,7 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
 
         MainScope().allowUndo(
             requireActivity().getRootView()!!,
-            snackbarAnchorView,
+            requireActivity().getSnackbarAnchorView(),
             message,
             getString(R.string.bookmark_undo_deletion),
             { undoPendingDeletion(selected) },
@@ -373,7 +368,7 @@ class BookmarkFragment : LibraryPageFragment<BookmarkNode>(), UserInteractionHan
                     // Use fragment's lifecycle; the view may be gone by the time dialog is interacted with.
                     lifecycleScope.allowUndo(
                         requireActivity().getRootView()!!,
-                        snackbarAnchorView,
+                        requireActivity().getSnackbarAnchorView(),
                         snackbarMessage,
                         getString(R.string.bookmark_undo_deletion),
                         {

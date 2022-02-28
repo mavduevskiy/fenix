@@ -39,6 +39,8 @@ import org.mozilla.fenix.databinding.SearchEngineRadioButtonBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.ext.getRootView
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.settings.SupportUtils
 
 @SuppressWarnings("LargeClass", "TooManyFunctions")
@@ -183,15 +185,12 @@ class AddSearchEngineFragment :
                     val successMessage = resources
                         .getString(R.string.search_add_custom_engine_success_message, name)
 
-                    view?.also {
-                        FenixSnackbar.make(
-                            view = it,
-                            duration = FenixSnackbar.LENGTH_SHORT,
-                            isDisplayedWithBrowserToolbar = false
-                        )
-                            .setText(successMessage)
-                            .show()
-                    }
+                    FenixSnackbar.make(
+                        parentView = requireActivity().getRootView()!!,
+                        anchorView = requireActivity().getSnackbarAnchorView(),
+                        text = successMessage,
+                        duration = FenixSnackbar.LENGTH_SHORT
+                    ).show()
                     findNavController().popBackStack()
                 }
             }

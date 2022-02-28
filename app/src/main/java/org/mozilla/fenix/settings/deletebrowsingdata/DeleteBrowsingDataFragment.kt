@@ -25,9 +25,11 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.databinding.FragmentDeleteBrowsingDataBinding
+import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.ext.getSnackbarAnchorView
 import org.mozilla.fenix.utils.Settings
 
 @SuppressWarnings("TooManyFunctions", "LargeClass")
@@ -185,12 +187,11 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
         updateItemCounts()
 
         FenixSnackbar.make(
-            view = requireView(),
-            duration = FenixSnackbar.LENGTH_SHORT,
-            isDisplayedWithBrowserToolbar = true
-        )
-            .setText(resources.getString(R.string.preferences_delete_browsing_data_snackbar))
-            .show()
+            parentView = requireActivity().getRootView()!!,
+            anchorView = requireActivity().getSnackbarAnchorView(),
+            text = getString(R.string.preferences_delete_browsing_data_snackbar),
+            duration = FenixSnackbar.LENGTH_SHORT
+        ).show()
 
         if (popAfter) viewLifecycleOwner.lifecycleScope.launch(Main) {
             findNavController().apply {
