@@ -5,13 +5,13 @@
 package org.mozilla.fenix.library.history
 
 import androidx.annotation.VisibleForTesting
-import androidx.paging.ItemKeyedDataSource
 import org.mozilla.fenix.components.history.HistoryDB
 import org.mozilla.fenix.components.history.PagedHistoryProvider
 
+@Suppress("DEPRECATION")
 class HistoryDataSource(
     private val historyProvider: PagedHistoryProvider
-) : ItemKeyedDataSource<Int, History>() {
+) : androidx.paging.ItemKeyedDataSource<Int, History>() {
 
     // Because the pagination is not based off of the key
     // we want to start at 1, not 0 to be able to send the correct offset
