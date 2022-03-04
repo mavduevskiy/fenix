@@ -77,9 +77,9 @@ interface PagedHistoryProvider {
      *
      * @param offset How much to offset the list by
      * @param numberOfItems How many items to fetch
-     * @param onComplete A callback that returns the list of [HistoryDB]
+     * @return the list of [HistoryDB]
      */
-    fun getHistory(offset: Int, numberOfItems: Int, onComplete: (List<HistoryDB>) -> Unit)
+    fun getHistory(offset: Int, numberOfItems: Int) : List<HistoryDB>
 }
 
 /**
@@ -113,15 +113,8 @@ class DefaultPagedHistoryProvider(
 
     @Volatile private var historyGroups: List<HistoryDB.Group>? = null
 
-    @Suppress("LongMethod")
-    override fun getHistory(
-        offset: Int,
-        numberOfItems: Int,
-        onComplete: (List<HistoryDB>) -> Unit,
-    ) {
-        // A PagedList DataSource runs on a background thread automatically.
-        // If we run this in our own coroutineScope it breaks the PagedList
-        runBlockingIncrement {
+    override fun getHistory(offset: Int, numberOfItems: Int): List<HistoryDB> {
+        return runBlockingIncrement {
             // We need to re-fetch all the history metadata if the offset resets back at 0
             // in the case of a pull to refresh.
             if (historyGroups == null || offset == 0) {
@@ -147,7 +140,7 @@ class DefaultPagedHistoryProvider(
                     .toList()
             }
 
-            onComplete(getHistoryAndSearchGroups(offset, numberOfItems))
+            getHistoryAndSearchGroups(offset, numberOfItems)
         }
     }
 
