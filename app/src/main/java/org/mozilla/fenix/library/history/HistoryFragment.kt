@@ -29,6 +29,7 @@ import mozilla.components.browser.state.action.RecentlyClosedAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.lib.state.ext.consumeFrom
+import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.support.base.feature.UserInteractionHandler
 import org.mozilla.fenix.BrowserDirection
@@ -42,12 +43,10 @@ import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.history.DefaultPagedHistoryProvider
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.databinding.FragmentHistoryBinding
-import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.nav
-import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.setTextColor
-import org.mozilla.fenix.ext.toShortUrl
+import org.mozilla.fenix.ext.*
 import org.mozilla.fenix.library.LibraryPageFragment
+import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsList
+import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.allowUndo
 
 @SuppressWarnings("TooManyFunctions", "LargeClass")
@@ -60,9 +59,9 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
     private var undoScope: CoroutineScope? = null
     private var pendingHistoryDeletionJob: (suspend () -> Unit)? = null
 
-    private var _historyView: HistoryView? = null
-    private val historyView: HistoryView
-        get() = _historyView!!
+//    private var _historyView: HistoryView? = null
+//    private val historyView: HistoryView
+//        get() = _historyView!!
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
 
@@ -73,6 +72,7 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
     ): View {
         _binding = FragmentHistoryBinding.inflate(inflater, container, false)
         val view = binding.root
+
         historyStore = StoreProvider.get(this) {
             HistoryFragmentStore(
                 HistoryFragmentState(
@@ -97,10 +97,10 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
         historyInteractor = DefaultHistoryInteractor(
             historyController
         )
-        _historyView = HistoryView(
-            binding.historyLayout,
-            historyInteractor
-        )
+//        _historyView = HistoryView(
+//            binding.historyLayout,
+//            historyInteractor
+//        )
 
         return view
     }
@@ -149,20 +149,28 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
         super.onViewCreated(view, savedInstanceState)
 
         consumeFrom(historyStore) {
-            historyView.update(it)
+//            historyView.update(it)
         }
 
         // Data may have been updated in below groups.
         // When returning to this fragment we need to ensure we display the latest data.
         viewModel = HistoryViewModel(historyProvider).also { model ->
-            model.userHasHistory.observe(
-                viewLifecycleOwner,
-                historyView::updateEmptyState
-            )
+//            model.userHasHistory.observe(
+//                viewLifecycleOwner,
+//                historyView::updateEmptyState
+//            )
+//
+//            model.viewModelScope.launch {
+//                model.history.collect {
+//                    historyView.historyAdapter.submitData(it)
+//                }
+//            }
 
-            model.viewModelScope.launch {
-                model.history.collect {
-                    historyView.historyAdapter.submitData(it)
+            binding.composeView.setContent {
+                FirefoxTheme {
+                    HistoryList(
+                        model.history
+                    )
                 }
             }
         }
@@ -288,14 +296,14 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
         super.onPause()
     }
 
-    override fun onBackPressed(): Boolean {
-        invokePendingDeletion()
-        return historyView.onBackPressed()
-    }
+//    override fun onBackPressed(): Boolean {
+//        invokePendingDeletion()
+//        return historyView.onBackPressed()
+//    }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _historyView = null
+//        _historyView = null
         _binding = null
     }
 
@@ -325,7 +333,7 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
                         requireComponents.core.historyStorage.deleteEverything()
                         deleteOpenTabsEngineHistory(requireComponents.core.store)
                         launch(Main) {
-                            historyView.historyAdapter.refresh()
+//                            historyView.historyAdapter.refresh()
                             historyStore.dispatch(HistoryFragmentAction.ExitDeletionMode)
                             showSnackBar(
                                 requireView(),
@@ -414,6 +422,10 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
     private suspend fun syncHistory() {
         val accountManager = requireComponents.backgroundServices.accountManager
         accountManager.syncNow(SyncReason.User)
-        historyView.historyAdapter.refresh()
+//        historyView.historyAdapter.refresh()
+    }
+
+    override fun onBackPressed(): Boolean {
+        return false
     }
 }

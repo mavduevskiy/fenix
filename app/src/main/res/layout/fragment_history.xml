@@ -9,4 +9,11 @@
     android:id="@+id/historyLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="org.mozilla.fenix.library.history.HistoryFragment" />
+    tools:context="org.mozilla.fenix.library.history.HistoryFragment">
+
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/composeView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</FrameLayout>

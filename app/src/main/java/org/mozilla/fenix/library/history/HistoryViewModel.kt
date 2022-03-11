@@ -10,6 +10,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import org.mozilla.fenix.components.history.PagedHistoryProvider
 
 class HistoryViewModel(historyProvider: PagedHistoryProvider) : ViewModel() {
@@ -21,6 +24,8 @@ class HistoryViewModel(historyProvider: PagedHistoryProvider) : ViewModel() {
             PagingConfig(PAGE_SIZE),
             null
         ) { HistoryDataSource(historyProvider) { userHasHistory.value = false } }.flow
+
+//        history.map { history -> history.toString() }
     }
 
     companion object {

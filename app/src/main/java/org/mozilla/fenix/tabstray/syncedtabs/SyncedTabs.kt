@@ -7,6 +7,7 @@
 package org.mozilla.fenix.tabstray.syncedtabs
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -80,6 +81,7 @@ fun SyncedTabsList(
         modifier = Modifier.fillMaxSize(),
         state = listState,
     ) {
+        Log.d("kolobok", "LazyColumn inited")
         if (taskContinuityEnabled) {
             syncedTabs.forEachIndexed { index, syncedTabItem ->
                 when (syncedTabItem) {
