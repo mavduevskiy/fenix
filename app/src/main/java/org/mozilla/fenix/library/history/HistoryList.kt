@@ -11,10 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -38,18 +35,34 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.loadIntoView
 import org.mozilla.fenix.theme.FirefoxTheme
 
+data class CollapsedRange(var start: Int, var finish: Int? = null)
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HistoryList(history: Flow<PagingData<History>>) {
     val historyItems: LazyPagingItems<History> = history.collectAsLazyPagingItems()
     val itemsWithHeaders: MutableMap<HistoryItemTimeGroup, Int> = mutableMapOf()
+    val collapsedHeaders = remember {
+        mutableStateMapOf(
+            HistoryItemTimeGroup.Today to false,
+            HistoryItemTimeGroup.Yesterday to false,
+            HistoryItemTimeGroup.ThisWeek to false,
+            HistoryItemTimeGroup.ThisMonth to false,
+            HistoryItemTimeGroup.Older to false
+        )
+    }
 //    val expandedState = remember(ArrayList<Boolean>()) { syncedTabs.map { EXPANDED_BY_DEFAULT }.toMutableStateList() }
-    history.collectAsState(initial = emptyArray<History>())
+//    history.collectAsState(initial = emptyArray<History>())
     val context = LocalContext.current
+//    val collapsedRange = remember { mutableStateListOf<CollapsedRange>() }
 
     LazyColumn {
+
         val itemCount = historyItems.itemCount
-        Log.d("kolobok", "itemCount = $itemCount")
+//        Log.d("kolobok", "itemCount = $itemCount")
+
+//        val test = headersPositions.filter { it.second == true }
+
         for (index in 0 until itemCount) {
             val historyItem = historyItems.peek(index)
 
@@ -73,39 +86,50 @@ fun HistoryList(history: Flow<PagingData<History>>) {
                 }
                 timeGroup?.humanReadable(context)?.let { text ->
 //                    Log.d("kolobok", "humanReadable = $text")
+//                    if (headersPositions.find { it.first == index } == null) {
+//                        headersPositions.add(Pair(index, false))
+//                    }
                     this@LazyColumn.stickyHeader(key = index) {
                         HistorySectionHeader(text, expanded = false) {
-
+                            val currentValue = collapsedHeaders[historyItem.historyTimeGroup]!!
+                            collapsedHeaders[historyItem.historyTimeGroup] = !currentValue
+//                            val item = headersPositions.find { it.first == index }
+//                            item?.let {
+//                                headersPositions.add(Pair(it.first, true))
+//                                headersPositions.remove(it)
+//                            }
                         }
                     }
                 }
 
-                item {
-                    // Gets item, triggering page loads if needed
-                    val historyItem = historyItems[index]!!
-
-                    val bodyText = when (historyItem) {
-                        is History.Regular -> historyItem.url
-                        is History.Metadata -> historyItem.url
-                        is History.Group -> {
-                            val numChildren = historyItem.items.size
-                            val stringId = if (numChildren == 1) {
-                                R.string.history_search_group_site
-                            } else {
-                                R.string.history_search_group_sites
+//                val shouldHide = collapsedHeaders[historyItem.historyTimeGroup] //headersPositions.find { it.second && it.first < index } != null
+                    item {
+                        // Gets item, triggering page loads if needed
+                        val historyItem = historyItems[index]!!
+                        if (collapsedHeaders[historyItem.historyTimeGroup] != true) {
+                            val bodyText = when (historyItem) {
+                                is History.Regular -> historyItem.url
+                                is History.Metadata -> historyItem.url
+                                is History.Group -> {
+                                    val numChildren = historyItem.items.size
+                                    val stringId = if (numChildren == 1) {
+                                        R.string.history_search_group_site
+                                    } else {
+                                        R.string.history_search_group_sites
+                                    }
+                                    String.format(LocalContext.current.getString(stringId), numChildren)
+                                }
                             }
-                            String.format(LocalContext.current.getString(stringId), numChildren)
+
+                            val url = when (historyItem) {
+                                is History.Regular -> historyItem.url
+                                is History.Metadata -> historyItem.url
+                                is History.Group -> null
+                            }
+
+                            HistoryItem(historyItem.title, bodyText, url, {})
                         }
                     }
-
-                    val url = when (historyItem) {
-                        is History.Regular -> historyItem.url
-                        is History.Metadata -> historyItem.url
-                        is History.Group -> null
-                    }
-
-                    HistoryItem(historyItem.title, bodyText, url, {})
-                }
             }
         }
 
