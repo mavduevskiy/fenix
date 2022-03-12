@@ -28,6 +28,7 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.Flow
+import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.PrimaryText
 import org.mozilla.fenix.compose.SecondaryText
@@ -39,8 +40,17 @@ data class CollapsedRange(var start: Int, var finish: Int? = null)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HistoryList(history: Flow<PagingData<History>>) {
+fun HistoryList(
+    history: Flow<PagingData<History>>,
+    historyStore: HistoryFragmentStore,
+    interactor: HistoryInteractor
+) {
     val historyItems: LazyPagingItems<History> = history.collectAsLazyPagingItems()
+    val pendingDeletionIds = historyStore.observeAsComposableState { state ->
+        Log.d("kolobok", "observeAsComposableState = ${state.pendingDeletionIds}")
+        state.pendingDeletionIds
+    }.value
+
     val itemsWithHeaders: MutableMap<HistoryItemTimeGroup, Int> = mutableMapOf()
     val collapsedHeaders = remember {
         mutableStateMapOf(
@@ -59,13 +69,10 @@ fun HistoryList(history: Flow<PagingData<History>>) {
     LazyColumn {
 
         val itemCount = historyItems.itemCount
-//        Log.d("kolobok", "itemCount = $itemCount")
-
+        Log.d("kolobok", "itemCount = $itemCount")
 //        val test = headersPositions.filter { it.second == true }
-
         for (index in 0 until itemCount) {
             val historyItem = historyItems.peek(index)
-
             if (historyItem != null) {
                 var timeGroup: HistoryItemTimeGroup? = null
                 val isPendingDeletion = false
@@ -90,7 +97,7 @@ fun HistoryList(history: Flow<PagingData<History>>) {
 //                        headersPositions.add(Pair(index, false))
 //                    }
                     this@LazyColumn.stickyHeader(key = index) {
-                        HistorySectionHeader(text, expanded = false) {
+                        HistorySectionHeader(text, expanded = collapsedHeaders[historyItem.historyTimeGroup]) {
                             val currentValue = collapsedHeaders[historyItem.historyTimeGroup]!!
                             collapsedHeaders[historyItem.historyTimeGroup] = !currentValue
 //                            val item = headersPositions.find { it.first == index }
@@ -106,7 +113,13 @@ fun HistoryList(history: Flow<PagingData<History>>) {
                     item {
                         // Gets item, triggering page loads if needed
                         val historyItem = historyItems[index]!!
-                        if (collapsedHeaders[historyItem.historyTimeGroup] != true) {
+
+                        val collapsedHeader = collapsedHeaders[historyItem.historyTimeGroup] == true
+                        val pendingDeletion = pendingDeletionIds?.contains(historyItem.visitedAt) == true
+                        Log.d("kolobok", "collapsedHeader = $collapsedHeader, pendingDeletion = $pendingDeletion")
+                        val shouldHide = collapsedHeader || pendingDeletion
+                        Log.d("kolobok", "shouldHide = $shouldHide")
+                        if (!shouldHide) {
                             val bodyText = when (historyItem) {
                                 is History.Regular -> historyItem.url
                                 is History.Metadata -> historyItem.url
@@ -127,7 +140,9 @@ fun HistoryList(history: Flow<PagingData<History>>) {
                                 is History.Group -> null
                             }
 
-                            HistoryItem(historyItem.title, bodyText, url, {})
+                            HistoryItem(historyItem.title, bodyText, url, {}, {
+                                interactor.onDeleteSome(setOf(historyItem))
+                            })
                         }
                     }
             }
@@ -243,7 +258,8 @@ fun HistoryItem(
     titleText: String,
     bodyText: String,
     url: String?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Row {
 //        Log.d("Test", "url = $url")
@@ -280,25 +296,37 @@ fun HistoryItem(
 //            contentScale = ContentScale.Crop
 //        )
 
-
-
-        Column{
+        Column(
+            Modifier.weight(1f)
+        ){
             PrimaryText(
                 text = titleText,
-                modifier = Modifier.fillMaxWidth(),
+//                modifier = Modifier.fillMaxWidth(),
                 fontSize = 16.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             SecondaryText(
                 text = bodyText,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp),
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(top = 2.dp),
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
+
+        Icon(
+            painter = painterResource(R.drawable.ic_close),
+            contentDescription = stringResource(R.string.history_delete_item),
+            tint = FirefoxTheme.colors.textPrimary,
+            modifier = Modifier
+                .size(36.dp, 36.dp)
+                .background(FirefoxTheme.colors.layer1)
+                .clickable(onClick = {
+                    onDelete.invoke()
+                })
+        )
     }
 }

@@ -169,7 +169,9 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
             binding.composeView.setContent {
                 FirefoxTheme {
                     HistoryList(
-                        model.history
+                        model.history,
+                        historyStore,
+                        historyInteractor
                     )
                 }
             }
