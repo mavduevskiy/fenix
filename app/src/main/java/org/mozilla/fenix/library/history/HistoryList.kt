@@ -6,11 +6,11 @@ import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
-import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,10 +33,13 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.PrimaryText
 import org.mozilla.fenix.compose.SecondaryText
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.hideAndDisable
 import org.mozilla.fenix.ext.loadIntoView
+import org.mozilla.fenix.ext.showAndEnable
+import org.mozilla.fenix.library.LibrarySiteItemView
+import org.mozilla.fenix.selection.SelectionHolder
 import org.mozilla.fenix.theme.FirefoxTheme
-
-data class CollapsedRange(var start: Int, var finish: Int? = null)
+import java.util.*
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -46,10 +49,18 @@ fun HistoryList(
     interactor: HistoryInteractor
 ) {
     val historyItems: LazyPagingItems<History> = history.collectAsLazyPagingItems()
-    val pendingDeletionIds = historyStore.observeAsComposableState { state ->
-        Log.d("kolobok", "observeAsComposableState = ${state.pendingDeletionIds}")
-        state.pendingDeletionIds
-    }.value
+    // TODO somewhere here we should save the state to compare it with the old one
+    // in case it has changed, we switch to modify
+    val state = historyStore.observeAsComposableState { state ->
+        state
+    }
+    val pendingDeletionIds = state.value?.pendingDeletionIds
+    val selectedItems = state.value?.mode?.selectedItems
+    val mode = state.value?.mode
+//    val pendingDeletionIds = historyStore.observeAsComposableState { state ->
+////        Log.d("kolobok", "observeAsComposableState = ${state.pendingDeletionIds}")
+//        state.pendingDeletionIds
+//    }.value
 
     val itemsWithHeaders: MutableMap<HistoryItemTimeGroup, Int> = mutableMapOf()
     val collapsedHeaders = remember {
@@ -66,6 +77,8 @@ fun HistoryList(
     val context = LocalContext.current
 //    val collapsedRange = remember { mutableStateListOf<CollapsedRange>() }
 
+    Log.d("kolobok", "selectedItems = $selectedItems")
+    Log.d("kolobok", "mode = $mode")
     LazyColumn {
 
         val itemCount = historyItems.itemCount
@@ -97,7 +110,10 @@ fun HistoryList(
 //                        headersPositions.add(Pair(index, false))
 //                    }
                     this@LazyColumn.stickyHeader(key = index) {
-                        HistorySectionHeader(text, expanded = collapsedHeaders[historyItem.historyTimeGroup]) {
+                        HistorySectionHeader(
+                            text,
+                            expanded = collapsedHeaders[historyItem.historyTimeGroup]
+                        ) {
                             val currentValue = collapsedHeaders[historyItem.historyTimeGroup]!!
                             collapsedHeaders[historyItem.historyTimeGroup] = !currentValue
 //                            val item = headersPositions.find { it.first == index }
@@ -110,41 +126,57 @@ fun HistoryList(
                 }
 
 //                val shouldHide = collapsedHeaders[historyItem.historyTimeGroup] //headersPositions.find { it.second && it.first < index } != null
-                    item {
-                        // Gets item, triggering page loads if needed
-                        val historyItem = historyItems[index]!!
+                item {
+                    // Gets item, triggering page loads if needed
+                    val historyItem = historyItems[index]!!
 
-                        val collapsedHeader = collapsedHeaders[historyItem.historyTimeGroup] == true
-                        val pendingDeletion = pendingDeletionIds?.contains(historyItem.visitedAt) == true
-                        Log.d("kolobok", "collapsedHeader = $collapsedHeader, pendingDeletion = $pendingDeletion")
-                        val shouldHide = collapsedHeader || pendingDeletion
-                        Log.d("kolobok", "shouldHide = $shouldHide")
-                        if (!shouldHide) {
-                            val bodyText = when (historyItem) {
-                                is History.Regular -> historyItem.url
-                                is History.Metadata -> historyItem.url
-                                is History.Group -> {
-                                    val numChildren = historyItem.items.size
-                                    val stringId = if (numChildren == 1) {
-                                        R.string.history_search_group_site
-                                    } else {
-                                        R.string.history_search_group_sites
-                                    }
-                                    String.format(LocalContext.current.getString(stringId), numChildren)
+                    val collapsedHeader = collapsedHeaders[historyItem.historyTimeGroup] == true
+                    val pendingDeletion =
+                        pendingDeletionIds?.contains(historyItem.visitedAt) == true
+//                        Log.d("kolobok", "collapsedHeader = $collapsedHeader, pendingDeletion = $pendingDeletion")
+                    val shouldHide = collapsedHeader || pendingDeletion
+//                        Log.d("kolobok", "shouldHide = $shouldHide")
+                    if (!shouldHide) {
+                        val bodyText = when (historyItem) {
+                            is History.Regular -> historyItem.url
+                            is History.Metadata -> historyItem.url
+                            is History.Group -> {
+                                val numChildren = historyItem.items.size
+                                val stringId = if (numChildren == 1) {
+                                    R.string.history_search_group_site
+                                } else {
+                                    R.string.history_search_group_sites
                                 }
+                                String.format(LocalContext.current.getString(stringId), numChildren)
                             }
-
-                            val url = when (historyItem) {
-                                is History.Regular -> historyItem.url
-                                is History.Metadata -> historyItem.url
-                                is History.Group -> null
-                            }
-
-                            HistoryItem(historyItem.title, bodyText, url, {}, {
-                                interactor.onDeleteSome(setOf(historyItem))
-                            })
                         }
+
+                        val url = when (historyItem) {
+                            is History.Regular -> historyItem.url
+                            is History.Metadata -> historyItem.url
+                            is History.Group -> null
+                        }
+
+                        HistoryItem(
+                            historyItem,
+                            interactor,
+                            selectedItems!!,
+                            mode!!,
+                            historyItem.title,
+                            bodyText,
+                            url,
+                            onClick = {
+
+                            },
+                            onLongClick = {
+
+                            },
+                            onDelete = {
+                                interactor.onDeleteSome(setOf(historyItem))
+                            }
+                        )
                     }
+                }
             }
         }
 
@@ -253,80 +285,154 @@ fun HistorySectionHeader(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HistoryItem(
+    historyItem: History,
+    historyInteractor: HistoryInteractor,
+    selectedItems: Set<History>,
+    mode: HistoryFragmentState.Mode,
     titleText: String,
     bodyText: String,
     url: String?,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Row {
-//        Log.d("Test", "url = $url")
-        if (url != null) {
-            AndroidView(
-                modifier = Modifier.size(36.dp, 36.dp),
-                // The viewBlock provides us with the Context so we do not have to pass this down into the @Composable
-                // ourself
-                factory = { context ->
-                    // Inside the viewBlock we create a good ol' fashion TextView to match the width and height of its
-                    // parent
-                    ImageView(context).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            50.dp.value.toInt(),
-                            50.dp.value.toInt()
-                        )
-                        context.components.core.icons.loadIntoView(this, url)
-                    }
-                })
-        } else {
-            androidx.compose.foundation.Image(
-                painter = painterResource(id = R.drawable.ic_multiple_tabs),
-                contentDescription = null,
-                modifier = Modifier.size(36.dp, 36.dp),
-                contentScale = ContentScale.FillWidth,
-                alignment = Alignment.Center
-            )
-        }
-//
-//        Image(
-//            url = previewImageUrl,
-//            modifier = modifier,
-//            targetSize = 108.dp,
-//            contentScale = ContentScale.Crop
-//        )
+    Log.d("kalabak", "HistoryItem call, = $historyItem")
 
-        Column(
-            Modifier.weight(1f)
-        ){
-            PrimaryText(
-                text = titleText,
-//                modifier = Modifier.fillMaxWidth(),
-                fontSize = 16.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            SecondaryText(
-                text = bodyText,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(top = 2.dp),
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
 
-        Icon(
-            painter = painterResource(R.drawable.ic_close),
-            contentDescription = stringResource(R.string.history_delete_item),
-            tint = FirefoxTheme.colors.textPrimary,
-            modifier = Modifier
-                .size(36.dp, 36.dp)
-                .background(FirefoxTheme.colors.layer1)
-                .clickable(onClick = {
-                    onDelete.invoke()
-                })
-        )
+
+    if (mode is HistoryFragmentState.Mode.Editing) {
+        historyInteractor.onModeSwitched()
     }
+
+    AndroidView(
+        modifier = Modifier.fillMaxWidth(),
+        factory = {
+            Log.d("kalabak", "factory call, = $historyItem")
+            LibrarySiteItemView(it).apply {
+                url?.let { url -> loadFavicon(url) }
+                titleView.text = titleText
+                urlView.text = url
+                overflowView.apply {
+                    setImageResource(R.drawable.ic_close)
+                    contentDescription = it.getString(R.string.history_delete_item)
+                    setOnClickListener {
+                        val item = historyItem
+                        historyInteractor.onDeleteSome(setOf(item))
+                    }
+                }
+                setSelectionInteractor(
+                    historyItem,
+                    object : SelectionHolder<History> {
+                        override val selectedItems: Set<History>
+                            get() = selectedItems
+
+                    }, historyInteractor
+                )
+
+                val isSelected = historyItem in selectedItems
+                Log.d("kalabak", "isSelected = $isSelected")
+                changeSelected(isSelected)
+
+                if (mode is HistoryFragmentState.Mode.Editing) {
+                    overflowView.hideAndDisable()
+                } else {
+                    overflowView.showAndEnable()
+                }
+            }
+        }, update = {
+            val isSelected = historyItem in selectedItems
+            it.changeSelected(isSelected)
+            if (isSelected && mode is HistoryFragmentState.Mode.Editing) {
+                it.overflowView.hideAndDisable()
+            } else {
+                it.overflowView.showAndEnable()
+            }
+            it.setSelectionInteractor(
+                historyItem,
+                object : SelectionHolder<History> {
+                    override val selectedItems: Set<History>
+                        get() = selectedItems
+
+                }, historyInteractor
+            )
+        })
+
+//    Row(modifier = Modifier.combinedClickable(
+//        onClick = {
+//            onClick.invoke()
+//        },
+//        onLongClick = {
+//            onLongClick.invoke()
+//        })
+//    ) {
+////        Log.d("Test", "url = $url")
+//        if (url != null) {
+//            AndroidView(
+//                modifier = Modifier.size(36.dp, 36.dp),
+//                // The viewBlock provides us with the Context so we do not have to pass this down into the @Composable
+//                // ourself
+//                factory = { context ->
+//                    // Inside the viewBlock we create a good ol' fashion TextView to match the width and height of its
+//                    // parent
+//                    ImageView(context).apply {
+//                        layoutParams = ViewGroup.LayoutParams(
+//                            50.dp.value.toInt(),
+//                            50.dp.value.toInt()
+//                        )
+//                        context.components.core.icons.loadIntoView(this, url)
+//                    }
+//                })
+//        } else {
+//            androidx.compose.foundation.Image(
+//                painter = painterResource(id = R.drawable.ic_multiple_tabs),
+//                contentDescription = null,
+//                modifier = Modifier.size(36.dp, 36.dp),
+//                contentScale = ContentScale.FillWidth,
+//                alignment = Alignment.Center
+//            )
+//        }
+////
+////        Image(
+////            url = previewImageUrl,
+////            modifier = modifier,
+////            targetSize = 108.dp,
+////            contentScale = ContentScale.Crop
+////        )
+//
+//        Column(
+//            Modifier.weight(1f)
+//        ){
+//            PrimaryText(
+//                text = titleText,
+////                modifier = Modifier.fillMaxWidth(),
+//                fontSize = 16.sp,
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//            SecondaryText(
+//                text = bodyText,
+////                modifier = Modifier
+////                    .fillMaxWidth()
+////                    .padding(top = 2.dp),
+//                fontSize = 12.sp,
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis
+//            )
+//        }
+//
+//        Icon(
+//            painter = painterResource(R.drawable.ic_close),
+//            contentDescription = stringResource(R.string.history_delete_item),
+//            tint = FirefoxTheme.colors.textPrimary,
+//            modifier = Modifier
+//                .size(36.dp, 36.dp)
+//                .background(FirefoxTheme.colors.layer1)
+//                .clickable(onClick = {
+//                    onDelete.invoke()
+//                })
+//        )
+//    }
 }
