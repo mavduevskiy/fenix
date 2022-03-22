@@ -12,14 +12,18 @@ import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import org.mozilla.fenix.components.history.PagedHistoryProvider
 
-class HistoryViewModel(historyProvider: PagedHistoryProvider) : ViewModel() {
+class HistoryViewModel(
+    historyProvider: PagedHistoryProvider,
+    showOnlyLocal: Boolean
+) : ViewModel() {
     var userHasHistory = MutableLiveData(true)
     var history: Flow<PagingData<History>> = Pager(
         PagingConfig(PAGE_SIZE),
         null
     ) {
         HistoryDataSource(
-            historyProvider = historyProvider
+            historyProvider = historyProvider,
+            isRemote = if (showOnlyLocal) false else null
         )
     }.flow
 

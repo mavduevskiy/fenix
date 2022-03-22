@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.library.history
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -12,6 +11,7 @@ import androidx.paging.LoadState
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import mozilla.components.support.base.feature.UserInteractionHandler
+import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.ComponentHistoryBinding
 import org.mozilla.fenix.ext.components
@@ -34,10 +34,12 @@ class HistoryView(
     var mode: HistoryFragmentState.Mode = HistoryFragmentState.Mode.Normal
         private set
 
-    val historyAdapter = HistoryAdapter(interactor).apply {
+    val historyAdapter = HistoryAdapter(
+        interactor,
+        syncedHistoryVisible = FeatureFlags.syncedHistoryFeature
+    ).apply {
         addLoadStateListener {
             adapterItemCount = itemCount
-            Log.d("hehehaha", "adapterItemCount = $adapterItemCount")
             if (it.source.refresh is LoadState.NotLoading &&
                 it.append.endOfPaginationReached &&
                 itemCount < 1
@@ -116,7 +118,8 @@ class HistoryView(
             recentlyClosedNav.setOnClickListener {
                 interactor.onRecentlyClosedClicked()
             }
-            val numRecentTabs = recentlyClosedNav.context.components.core.store.state.closedTabs.size
+            val numRecentTabs =
+                recentlyClosedNav.context.components.core.store.state.closedTabs.size
             recentlyClosedTabsDescription.text = String.format(
                 context.getString(
                     if (numRecentTabs == 1)
@@ -125,6 +128,13 @@ class HistoryView(
                 numRecentTabs
             )
             recentlyClosedNav.isVisible = !userHasHistory
+        }
+        with(binding.syncedHistoryNavEmpty) {
+            val syncedHistoryVisible = FeatureFlags.syncedHistoryFeature && !userHasHistory
+            syncedHistoryNav.setOnClickListener {
+                interactor.onSyncedHistoryClicked()
+            }
+            syncedHistoryNav.isVisible = syncedHistoryVisible
         }
         if (!userHasHistory) {
             binding.historyEmptyView.announceForAccessibility(context.getString(R.string.history_empty_message))

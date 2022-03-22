@@ -10,8 +10,15 @@ import androidx.paging.PagingState
 import org.mozilla.fenix.components.history.HistoryDB
 import org.mozilla.fenix.components.history.PagedHistoryProvider
 
+/**
+ * Using android views provides adapter callbacks like
+ * [androidx.paging.PagingDataAdapter.addLoadStateListener] for tracking loading zero items.
+ * @param onZeroItemsLoaded is required to track that while using Compose.
+ */
 class HistoryDataSource(
-    private val historyProvider: PagedHistoryProvider
+    private val historyProvider: PagedHistoryProvider,
+    private val isRemote: Boolean? = null,
+    private val onZeroItemsLoaded: (() -> Unit)? = null
 ) : PagingSource<Int, History>() {
 
     // having any value but null creates visual glitches in case or swipe to refresh and immediate
@@ -21,10 +28,14 @@ class HistoryDataSource(
     // params.key is expected to be null for the initial load or a refresh
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, History> {
         val offset = params.key ?: 0
-        val historyItems = historyProvider.getHistory(offset, params.loadSize).run {
+        val historyItems = historyProvider.getHistory(offset, params.loadSize, isRemote).run {
             positionWithOffset(offset)
         }
         val nextOffset = if (historyItems.isEmpty()) {
+            // params.key is null during the first call
+            if (params.key == null) {
+                onZeroItemsLoaded?.invoke()
+            }
             null
         } else {
             (offset + historyItems.size) + 1

@@ -155,7 +155,8 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
 
         // Data may have been updated in below groups.
         // When returning to this fragment we need to ensure we display the latest data.
-        viewModel = HistoryViewModel(historyProvider).also { model ->
+        val showOnlyLocal = FeatureFlags.syncedHistoryFeature
+        viewModel = HistoryViewModel(historyProvider, showOnlyLocal).also { model ->
             model.userHasHistory.observe(
                 viewLifecycleOwner,
                 historyView::updateEmptyState
