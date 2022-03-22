@@ -186,6 +186,7 @@ object Deps {
     const val androidx_compose_ui_tooling = "androidx.compose.ui:ui-tooling:${Versions.androidx_compose}"
     const val androidx_compose_foundation = "androidx.compose.foundation:foundation:${Versions.androidx_compose}"
     const val androidx_compose_material = "androidx.compose.material:material:${Versions.androidx_compose}"
+    const val androidx_compose_paging = "androidx.paging:paging-compose:${Versions.androidx_compose_paging}"
     const val androidx_annotation = "androidx.annotation:annotation:${Versions.androidx_annotation}"
     const val androidx_benchmark_junit4 = "androidx.benchmark:benchmark-junit4:${Versions.androidx_benchmark}"
     const val androidx_biometric = "androidx.biometric:biometric:${Versions.androidx_biometric}"
@@ -212,6 +213,7 @@ object Deps {
     const val androidx_work_testing = "androidx.work:work-testing:${Versions.androidx_work}"
     const val androidx_datastore = "androidx.datastore:datastore:${Versions.androidx_datastore}"
     const val google_material = "com.google.android.material:material:${Versions.google_material}"
+    const val accompanist_swiperefresh = "com.google.accompanist:accompanist-swiperefresh:${Versions.accompanist_swiperefresh}"
 
     const val protobuf_javalite = "com.google.protobuf:protobuf-javalite:${Versions.protobuf}"
     const val protobuf_compiler = "com.google.protobuf:protoc:${Versions.protobuf}"
