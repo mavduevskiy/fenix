@@ -1,6 +1,5 @@
 package org.mozilla.fenix.library.history
 
-import android.util.Log
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -30,6 +29,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.flow.Flow
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
+import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.PrimaryText
 import org.mozilla.fenix.compose.SecondaryText
 import org.mozilla.fenix.ext.components
@@ -57,10 +57,6 @@ fun HistoryList(
     val pendingDeletionIds = state.value?.pendingDeletionIds
     val selectedItems = state.value?.mode?.selectedItems
     val mode = state.value?.mode
-//    val pendingDeletionIds = historyStore.observeAsComposableState { state ->
-////        Log.d("kolobok", "observeAsComposableState = ${state.pendingDeletionIds}")
-//        state.pendingDeletionIds
-//    }.value
 
     val itemsWithHeaders: MutableMap<HistoryItemTimeGroup, Int> = mutableMapOf()
     val collapsedHeaders = remember {
@@ -72,18 +68,12 @@ fun HistoryList(
             HistoryItemTimeGroup.Older to false
         )
     }
-//    val expandedState = remember(ArrayList<Boolean>()) { syncedTabs.map { EXPANDED_BY_DEFAULT }.toMutableStateList() }
-//    history.collectAsState(initial = emptyArray<History>())
     val context = LocalContext.current
-//    val collapsedRange = remember { mutableStateListOf<CollapsedRange>() }
 
-    Log.d("kolobok", "selectedItems = $selectedItems")
-    Log.d("kolobok", "mode = $mode")
     LazyColumn {
 
         val itemCount = historyItems.itemCount
-        Log.d("kolobok", "itemCount = $itemCount")
-//        val test = headersPositions.filter { it.second == true }
+        val headerMap = mutableMapOf<Int, HeaderViewItem>()
         for (index in 0 until itemCount) {
             val historyItem = historyItems.peek(index)
             if (historyItem != null) {
@@ -105,37 +95,34 @@ fun HistoryList(
                     timeGroup = historyItem.historyTimeGroup
                 }
                 timeGroup?.humanReadable(context)?.let { text ->
-//                    Log.d("kolobok", "humanReadable = $text")
-//                    if (headersPositions.find { it.first == index } == null) {
-//                        headersPositions.add(Pair(index, false))
-//                    }
-                    this@LazyColumn.stickyHeader(key = index) {
+                    headerMap.put(index, HeaderViewItem(text, collapsedHeaders[historyItem.historyTimeGroup]!!))
+                }
+            }
+        }
+
+        for (index in 0 until itemCount) {
+            val historyItem = historyItems.peek(index)
+            if (historyItem != null) {
+
+                if (headerMap.containsKey(index)) {
+                    val headerItem = headerMap[index]!!
+                    stickyHeader(key = index) {
                         HistorySectionHeader(
-                            text,
-                            expanded = collapsedHeaders[historyItem.historyTimeGroup]
+                            headerItem.text,
+                            expanded = headerItem.isExpanded
                         ) {
-                            val currentValue = collapsedHeaders[historyItem.historyTimeGroup]!!
-                            collapsedHeaders[historyItem.historyTimeGroup] = !currentValue
-//                            val item = headersPositions.find { it.first == index }
-//                            item?.let {
-//                                headersPositions.add(Pair(it.first, true))
-//                                headersPositions.remove(it)
-//                            }
+                            collapsedHeaders[historyItem.historyTimeGroup]?.let {
+                                collapsedHeaders[historyItem.historyTimeGroup] = !it
+                            }
                         }
                     }
                 }
-
-//                val shouldHide = collapsedHeaders[historyItem.historyTimeGroup] //headersPositions.find { it.second && it.first < index } != null
                 item {
-                    // Gets item, triggering page loads if needed
                     val historyItem = historyItems[index]!!
 
                     val collapsedHeader = collapsedHeaders[historyItem.historyTimeGroup] == true
-                    val pendingDeletion =
-                        pendingDeletionIds?.contains(historyItem.visitedAt) == true
-//                        Log.d("kolobok", "collapsedHeader = $collapsedHeader, pendingDeletion = $pendingDeletion")
+                    val pendingDeletion = pendingDeletionIds?.contains(historyItem.visitedAt) == true
                     val shouldHide = collapsedHeader || pendingDeletion
-//                        Log.d("kolobok", "shouldHide = $shouldHide")
                     if (!shouldHide) {
                         val bodyText = when (historyItem) {
                             is History.Regular -> historyItem.url
@@ -179,66 +166,7 @@ fun HistoryList(
                 }
             }
         }
-
-//        itemsIndexed(historyItems) { index, historyItem ->
-//            historyItem?.let {
-//
-//                var timeGroup: HistoryItemTimeGroup? = null
-//                val isPendingDeletion = false
-//                if (itemsWithHeaders.containsKey(it.historyTimeGroup)) {
-//                    if (isPendingDeletion && itemsWithHeaders[it.historyTimeGroup] == index) {
-//                        itemsWithHeaders.remove(it.historyTimeGroup)
-//                    } else if (isPendingDeletion && itemsWithHeaders[it.historyTimeGroup] != index) {
-//                        // do nothing
-//                    } else {
-//                        if (index <= itemsWithHeaders[it.historyTimeGroup] as Int) {
-//                            itemsWithHeaders[it.historyTimeGroup] = index
-//                            timeGroup = it.historyTimeGroup
-//                        }
-//                    }
-//                } else if (!isPendingDeletion) {
-//                    itemsWithHeaders[it.historyTimeGroup] = index
-//                    timeGroup = it.historyTimeGroup
-//                }
-//
-//                timeGroup?.humanReadable(LocalContext.current)?.let { text ->
-////                    Log.d("kolobok", "humanReadable = $text")
-//                    this@LazyColumn.stickyHeader(key = index) {
-//                        Text(
-//                            text = text,
-//                            color = FirefoxTheme.colors.textPrimary,
-//                            fontSize = 14.sp,
-//                            overflow = TextOverflow.Ellipsis,
-//                            maxLines = 1
-//                        )
-//                    }
-//                }
-//
-//                val bodyText = when (it) {
-//                    is History.Regular -> it.url
-//                    is History.Metadata -> it.url
-//                    is History.Group -> {
-//                        val numChildren = it.items.size
-//                        val stringId = if (numChildren == 1) {
-//                            R.string.history_search_group_site
-//                        } else {
-//                            R.string.history_search_group_sites
-//                        }
-//                        String.format(LocalContext.current.getString(stringId), numChildren)
-//                    }
-//                }
-//
-//                val url = when (it) {
-//                    is History.Regular -> it.url
-//                    is History.Metadata -> it.url
-//                    is History.Group -> null
-//                }
-//
-//                HistoryItem(it.title, bodyText, url, {})
-//            }
-//        }
     }
-
 }
 
 @Composable
@@ -299,10 +227,6 @@ fun HistoryItem(
     onLongClick: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Log.d("kalabak", "HistoryItem call, = $historyItem")
-
-
-
     if (mode is HistoryFragmentState.Mode.Editing) {
         historyInteractor.onModeSwitched()
     }
@@ -310,7 +234,6 @@ fun HistoryItem(
     AndroidView(
         modifier = Modifier.fillMaxWidth(),
         factory = {
-            Log.d("kalabak", "factory call, = $historyItem")
             LibrarySiteItemView(it).apply {
                 url?.let { url -> loadFavicon(url) }
                 titleView.text = titleText
@@ -333,7 +256,6 @@ fun HistoryItem(
                 )
 
                 val isSelected = historyItem in selectedItems
-                Log.d("kalabak", "isSelected = $isSelected")
                 changeSelected(isSelected)
 
                 if (mode is HistoryFragmentState.Mode.Editing) {
@@ -359,80 +281,6 @@ fun HistoryItem(
                 }, historyInteractor
             )
         })
-
-//    Row(modifier = Modifier.combinedClickable(
-//        onClick = {
-//            onClick.invoke()
-//        },
-//        onLongClick = {
-//            onLongClick.invoke()
-//        })
-//    ) {
-////        Log.d("Test", "url = $url")
-//        if (url != null) {
-//            AndroidView(
-//                modifier = Modifier.size(36.dp, 36.dp),
-//                // The viewBlock provides us with the Context so we do not have to pass this down into the @Composable
-//                // ourself
-//                factory = { context ->
-//                    // Inside the viewBlock we create a good ol' fashion TextView to match the width and height of its
-//                    // parent
-//                    ImageView(context).apply {
-//                        layoutParams = ViewGroup.LayoutParams(
-//                            50.dp.value.toInt(),
-//                            50.dp.value.toInt()
-//                        )
-//                        context.components.core.icons.loadIntoView(this, url)
-//                    }
-//                })
-//        } else {
-//            androidx.compose.foundation.Image(
-//                painter = painterResource(id = R.drawable.ic_multiple_tabs),
-//                contentDescription = null,
-//                modifier = Modifier.size(36.dp, 36.dp),
-//                contentScale = ContentScale.FillWidth,
-//                alignment = Alignment.Center
-//            )
-//        }
-////
-////        Image(
-////            url = previewImageUrl,
-////            modifier = modifier,
-////            targetSize = 108.dp,
-////            contentScale = ContentScale.Crop
-////        )
-//
-//        Column(
-//            Modifier.weight(1f)
-//        ){
-//            PrimaryText(
-//                text = titleText,
-////                modifier = Modifier.fillMaxWidth(),
-//                fontSize = 16.sp,
-//                maxLines = 1,
-//                overflow = TextOverflow.Ellipsis
-//            )
-//            SecondaryText(
-//                text = bodyText,
-////                modifier = Modifier
-////                    .fillMaxWidth()
-////                    .padding(top = 2.dp),
-//                fontSize = 12.sp,
-//                maxLines = 1,
-//                overflow = TextOverflow.Ellipsis
-//            )
-//        }
-//
-//        Icon(
-//            painter = painterResource(R.drawable.ic_close),
-//            contentDescription = stringResource(R.string.history_delete_item),
-//            tint = FirefoxTheme.colors.textPrimary,
-//            modifier = Modifier
-//                .size(36.dp, 36.dp)
-//                .background(FirefoxTheme.colors.layer1)
-//                .clickable(onClick = {
-//                    onDelete.invoke()
-//                })
-//        )
-//    }
 }
+
+data class HeaderViewItem(val text: String, val isExpanded: Boolean)
