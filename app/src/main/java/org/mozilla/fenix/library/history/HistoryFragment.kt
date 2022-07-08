@@ -18,13 +18,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDirections
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -69,10 +69,11 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
     ) {
         HistoryDataSource(
             historyProvider = historyProvider,
-            isRemote = if (FeatureFlags.showSyncedHistory) false else null
+            isRemote = if (FeatureFlags.showSyncedHistory) args.isSyncedHistory else null
         )
     }.flow
 
+    private val args: HistoryFragmentArgs by navArgs()
     private var _historyView: HistoryView? = null
     private val historyView: HistoryView
         get() = _historyView!!
@@ -125,7 +126,8 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler {
                 historyStore.dispatch(
                     HistoryFragmentAction.ChangeEmptyState(it)
                 )
-            }
+            },
+            isSyncedHistory = args.isSyncedHistory
         )
 
         return view

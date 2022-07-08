@@ -26,7 +26,8 @@ class HistoryView(
     container: ViewGroup,
     val interactor: HistoryInteractor,
     val onZeroItemsLoaded: () -> Unit,
-    val onEmptyStateChanged: (Boolean) -> Unit
+    val onEmptyStateChanged: (Boolean) -> Unit,
+    val isSyncedHistory: Boolean
 ) : LibraryPageView(container), UserInteractionHandler {
 
     val binding = ComponentHistoryBinding.inflate(
@@ -36,9 +37,13 @@ class HistoryView(
     var mode: HistoryFragmentState.Mode = HistoryFragmentState.Mode.Normal
         private set
 
-    val historyAdapter = HistoryAdapter(interactor) { isEmpty ->
-        onEmptyStateChanged(isEmpty)
-    }.apply {
+    val historyAdapter = HistoryAdapter(
+        historyInteractor = interactor,
+        isSyncedHistory = isSyncedHistory,
+        onEmptyStateChanged = { isEmpty ->
+            onEmptyStateChanged(isEmpty)
+        }
+    ).apply {
         addLoadStateListener {
             // First call will always have itemCount == 0, but we want to keep adapterItemCount
             // as null until we can distinguish an empty list from populated, so updateEmptyState()
@@ -97,9 +102,12 @@ class HistoryView(
 
         when (val mode = state.mode) {
             is HistoryFragmentState.Mode.Normal -> {
-                setUiForNormalMode(
+                val title = if (isSyncedHistory) {
+                    context.getString(R.string.history_from_other_devices)
+                } else {
                     context.getString(R.string.library_history)
-                )
+                }
+                setUiForNormalMode(title = title)
             }
             is HistoryFragmentState.Mode.Editing -> {
                 setUiForSelectingMode(

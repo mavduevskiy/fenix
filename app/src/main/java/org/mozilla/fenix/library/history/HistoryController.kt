@@ -13,12 +13,12 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.HistoryMetadataAction
 import mozilla.components.service.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.history.DefaultPagedHistoryProvider
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 
@@ -35,7 +35,7 @@ interface HistoryController {
     fun handleRequestSync()
     fun handleEnterRecentlyClosed()
     /**
-     * Navigates to [org.mozilla.fenix.library.syncedhistory.SyncedHistoryFragment]
+     * Navigates to [HistoryFragment] with isSyncedHistory == true.
      */
     fun handleEnterSyncedHistory()
 }
@@ -103,12 +103,12 @@ class DefaultHistoryController(
 
     override fun handleSearch() {
         val directions = if (settings.showUnifiedSearchFeature) {
-            HistoryFragmentDirections.actionGlobalSearchDialog(null)
+            NavGraphDirections.actionGlobalSearchDialog(null)
         } else {
-            HistoryFragmentDirections.actionGlobalHistorySearchDialog()
+            NavGraphDirections.actionGlobalHistorySearchDialog()
         }
 
-        navController.navigateSafe(R.id.historyFragment, directions)
+        navController.navigate(directions)
     }
 
     override fun handleDeleteAll() {
@@ -168,8 +168,6 @@ class DefaultHistoryController(
     }
 
     override fun handleEnterSyncedHistory() {
-        navController.navigate(
-            HistoryFragmentDirections.actionHistoryFragmentToSyncedHistoryFragment()
-        )
+        navController.navigate(HistoryFragmentDirections.actionGlobalSyncedHistoryFragment())
     }
 }
