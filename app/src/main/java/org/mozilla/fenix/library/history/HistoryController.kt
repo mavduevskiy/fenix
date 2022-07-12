@@ -35,7 +35,7 @@ interface HistoryController {
     fun handleRequestSync()
     fun handleEnterRecentlyClosed()
     /**
-     * Navigates to [HistoryFragment] with isSyncedHistory == true.
+     * Navigates to [HistoryFragment] that would display history synced from other devices.
      */
     fun handleEnterSyncedHistory()
 }
