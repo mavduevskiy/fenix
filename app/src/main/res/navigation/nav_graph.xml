@@ -86,9 +86,6 @@
         android:id="@+id/action_global_historyFragment"
         app:destination="@id/historyFragment" />
     <action
-        android:id="@+id/action_global_synced_historyFragment"
-        app:destination="@id/syncedHistoryFragment" />
-    <action
         android:id="@+id/action_global_history_search_dialog"
         app:destination="@id/historySearchDialogFragment"
         app:popUpTo="@id/historySearchDialogFragment"
@@ -278,6 +275,9 @@
             android:name="isSyncedHistory"
             android:defaultValue="false"
             app:argType="boolean" />
+        <action
+            android:id="@+id/action_synced_historyFragment"
+            app:destination="@id/syncedHistoryFragment" />
     </fragment>
 
     <fragment
@@ -290,6 +290,9 @@
             android:name="isSyncedHistory"
             android:defaultValue="true"
             app:argType="boolean" />
+        <action
+            android:id="@+id/action_synced_historyFragment"
+            app:destination="@id/syncedHistoryFragment" />
     </fragment>
 
     <dialog

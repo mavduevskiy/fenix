@@ -103,9 +103,9 @@ class DefaultHistoryController(
 
     override fun handleSearch() {
         val directions = if (settings.showUnifiedSearchFeature) {
-            NavGraphDirections.actionGlobalSearchDialog(null)
+            HistoryFragmentDirections.actionGlobalSearchDialog(null)
         } else {
-            NavGraphDirections.actionGlobalHistorySearchDialog()
+            HistoryFragmentDirections.actionGlobalHistorySearchDialog()
         }
 
         navController.navigate(directions)
@@ -168,6 +168,6 @@ class DefaultHistoryController(
     }
 
     override fun handleEnterSyncedHistory() {
-        navController.navigate(HistoryFragmentDirections.actionGlobalSyncedHistoryFragment())
+        navController.navigate(HistoryFragmentDirections.actionSyncedHistoryFragment())
     }
 }
